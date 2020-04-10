@@ -1,3 +1,4 @@
+
 #include "dns_protocol.h"
 #include "utils.h"
 
@@ -35,11 +36,64 @@ void CreateHeader(struct dns_header *header)
 	header->arcount = 0;	
 }
 
+void Print_n_chars(const char *str, int n)
+{
+	for (int i = 0; i < n; i++)
+		printf("%c", str[i]);
+}
+
+void PrintDomainName(const char *domain_name) //this function is not needed...
+{
+	bool first_iteration = true;
+	while (true)
+	{
+		int num_of_chars_to_print = *domain_name;
+		if (num_of_chars_to_print == 0)
+			break;
+		if (!first_iteration)
+			printf(".");
+		domain_name++;
+		Print_n_chars(domain_name, num_of_chars_to_print);
+		domain_name += num_of_chars_to_print;
+		first_iteration = false;
+	}
+	printf("\n");
+}
+
+char CountNumOfCharsBeforeDot(const char *url_address, bool *end_of_string)
+{
+	char counter = 0;
+	while (true) {
+		if (*url_address == '\0') {
+			*end_of_string = true;
+			break;
+		}
+		if (*url_address == '.')
+			break;
+		url_address++;
+		counter++;
+	}
+	return counter;
+}
+
+void CreateDomainName(const char *url_address, char *domain_name)
+{
+	bool end_of_string = false;
+	while (!end_of_string)
+	{
+		char num_of_chars = CountNumOfCharsBeforeDot(url_address, &end_of_string);
+		*domain_name++ = num_of_chars;
+		for (int i = 0; i < num_of_chars; i++)
+			*domain_name++ = *url_address++;
+		url_address++;
+	}
+	*domain_name = 0;
+}
 
 void CreateQuery(const char *url_address, struct question *quest) {
 	CreateHeader(&(quest->header));
-	CreateDomainNAme(url_address, quest->domain_name);
-	quest->qclass = htnos(1); //internet
+	CreateDomainName(url_address, quest->domain_name);
+	quest->qclass = htons(1); //internet
 	quest->qtype = htons(NS);
 }
 
@@ -76,8 +130,8 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	//}
 
 	/* Create the DNS query */
-	struct question dns_querie;
-	CreateQuery(name, &dns_querie);
+	struct question dns_query;
+	CreateQuery(name, &dns_query);
 
 	/* Create DNS server address data struct - sockaddr_in */
 	FillDNSServerData(ip);
@@ -89,13 +143,13 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	}
 
 	/* Send the Query to the DNS server */
-	if (1 == SendQuery(query_example, 35)) {
+	if (1 == SendQuery(&dns_query, sizeof(dns_query))) {
 		/* TODO handle error */
 		printf("SendQuery() failed.\n");
 	}
 
 	/* Wait 2 seconds to recive the answer from the DNS server */
-	char dns_answer[MAX_QUERY_SIZE];
+	char dns_answer[MAX_QUERY_LEN];
 	int answer_len;
 	if (1 == RecvAnswer(dns_answer, &answer_len)) {
 		/* TODO handle error */
@@ -134,16 +188,16 @@ int FillDNSServerData(const char *ip) {
 	dns_address.sin_port = htons(DNS_PORT); //Setting the port.
 }
 
-int SendQuery(const char *query, int len) {
+int SendQuery(struct question *quest, int len) {
 	/* Send the Querie (the sendto function handles also the connect!)*/
 	printf("Sending a query to the DNS server...\n");
-	if (SOCKET_ERROR == sendto(m_socket, query, len, 0, (SOCKADDR *)&dns_address,sizeof(dns_address))) {
+	if (SOCKET_ERROR == sendto(m_socket, (char *)quest, len, 0, (SOCKADDR *)&dns_address,sizeof(dns_address))) {
 		printf("sendto failed with error: %d\n", WSAGetLastError());
 		//perror();
 		return 1; /* TODO handle error */
 	}
 	printf("Query sent:\n");
-	printHexString(query, len); /*debug*/
+	//printHexString(query, len); /*debug*/
 	return 0;
 }
 
@@ -168,7 +222,7 @@ int RecvAnswer(char *answer, int *recv_len) {
 		return 1;
 	}
 
-	*recv_len = recvfrom(m_socket, answer, MAX_QUERY_SIZE, 0, NULL, NULL);
+	*recv_len = recvfrom(m_socket, answer, MAX_QUERY_LEN, 0, NULL, NULL);
 	if (SOCKET_ERROR == *recv_len) {
 		printf("recvfrom failed with error %d\n", WSAGetLastError());
 		return 1;

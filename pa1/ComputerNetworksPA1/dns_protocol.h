@@ -1,10 +1,10 @@
 #ifndef _DNS_PROTOCOL_H
 #define _DNS_PROTOCOL_H
 
+#include <stdbool.h>
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
-
-#define DOMAIN_NAME_MAX_LEN 
+#include "utils.h"
 
 typedef struct dns_header
 {
@@ -25,20 +25,26 @@ typedef struct dns_header
 typedef struct question
 {
 	struct dns_header header;
-	char domain_name[DOMAIN_NAME_MAX_LEN];
+	char domain_name[MAX_DOMAIN_LEN];
 	unsigned short qtype;
 	unsigned short qclass;	
 };
 
-void CreateQuery(const char * name, char * dns_querie, int *len);
+void CreateHeader(struct dns_header * header);
 
-void ParseAnswer(const char * dns_answer, struct hostent * result);
+char CountNumOfCharsBeforeDot(const char * url_address, bool * end_of_string);
+
+void CreateDomainName(const char * url_address, char * domain_name);
+
+void CreateQuery(const char *url_address, struct question *quest);
+
+void ParseAnswer(const char *dns_answer, int len, struct hostent *result);
 
 struct hostent * dnsQuery(const char * name, const char * ip);
 
 int FillDNSServerData(const char * ip);
 
-int SendQuery(const char * query, int len);
+int SendQuery(struct question * quest, int len);
 
 int RecvAnswer(char *answer, int *recv_len);
 
