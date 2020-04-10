@@ -8,14 +8,15 @@ WSADATA wsaData;
 SOCKET m_socket = INVALID_SOCKET;
 SOCKADDR_IN dns_address;
 
-const char example_msg[35] = "\x00\x0c\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x03\x77\x77\x77\x08\x61\x63\x61\x64\x65\x6d\x69\x61\x03\x65\x64\x75\x00\x00\x01\x00\x01";
+const char query_example[35] = "\x00\x0c\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x03\x77\x77\x77\x08\x61\x63\x61\x64\x65\x6d\x69\x61\x03\x65\x64\x75\x00\x00\x01\x00\x01";
 void printHexString(const char *query, int len) {
 	for (size_t i = 0; i < len; i++)
 	{
-		printf("%02x", query[i]);
+		printf("%02x", (unsigned char)query[i]);
 	}
 	printf("\n");
 }
+
 
 void CreateHeader(struct dns_header *header)
 {
@@ -72,8 +73,14 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	/* Create DNS server address data struct - sockaddr_in */
 	FillDNSServerData(ip);
 
+	/* Create socket */
+	if (INVALID_SOCKET == (m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))) {
+		printf("socket failed with error %d\n", WSAGetLastError());
+		return 1; /*TODO: ERROR CODE*/
+	}
+
 	/* Send the Query to the DNS server */
-	if (1 == SendQuery(example_msg, 35)) {
+	if (1 == SendQuery(query_example, 35)) {
 		/* TODO handle error */
 		printf("SendQuery() failed.\n");
 	}
@@ -88,6 +95,15 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	/*Parse the DNS server answer and fill the fields of the hostent struct. */
 	ParseAnswer(dns_answer, result);
 	
+
+	/* Close socket */
+	if (m_socket != INVALID_SOCKET) {
+		if (SOCKET_ERROR == closesocket(m_socket)) {
+			printf("closesocket failed with error: %d\n", WSAGetLastError());
+		}
+		m_socket = INVALID_SOCKET;
+	}
+
 	/* Winsock Cleanup: */
 	if (WSACleanup() == SOCKET_ERROR)
 		printf("Failed to close Winsocket, error %ld. Ending program.\n", WSAGetLastError());
@@ -109,12 +125,6 @@ int FillDNSServerData(const char *ip) {
 }
 
 int SendQuery(const char *query, int len) {
-	/* Create socket */
-	if (INVALID_SOCKET == (m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))) {
-		printf("socket failed with error %d\n", WSAGetLastError());
-		return 1; /*TODO: ERROR CODE*/
-	}
-
 	/* Send the Querie (the sendto function handles also the connect!)*/
 	printf("Sending a query to the DNS server...\n");
 	if (SOCKET_ERROR == sendto(m_socket, query, len, 0, (SOCKADDR *)&dns_address,sizeof(dns_address))) {
@@ -124,24 +134,10 @@ int SendQuery(const char *query, int len) {
 	}
 	printf("Query sent:\n");
 	printHexString(query, len); /*debug*/
-	/* Close socket */
-	if (m_socket != INVALID_SOCKET) {
-		if (SOCKET_ERROR == closesocket(m_socket)) {
-			printf("closesocket failed with error: %d\n", WSAGetLastError());
-		}
-		m_socket = INVALID_SOCKET;
-	}
 	return 0;
 }
 
 int RecvAnswer(char *answer, int len) {
-	/* Create socket */
-	if (INVALID_SOCKET == (m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))) {
-		printf("socket failed with error %d\n", WSAGetLastError());
-		return 1; /*TODO: ERROR CODE*/
-	}
-	
-	SOCKADDR_IN answer_dns_address;
 	fd_set set;
 	struct timeval timeout;
 	FD_ZERO(&set); /* clear the set */
@@ -162,12 +158,13 @@ int RecvAnswer(char *answer, int len) {
 		return 1;
 	}
 
-	if (SOCKET_ERROR == recvfrom(m_socket, answer, len, 0, (SOCKADDR *)&answer_dns_address, 0)) {
+	int answer_len;
+	if (SOCKET_ERROR == (answer_len=recvfrom(m_socket, answer, len, 0, NULL, NULL))) {
 		printf("recvfrom failed with error %d\n", WSAGetLastError());
 		return 1;
 	}
-	printf("Answer recived.\n");
-
+	printf("Answer recived:\n");
+	printHexString(answer, answer_len);
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
 		if (SOCKET_ERROR == closesocket(m_socket)) {
