@@ -76,9 +76,8 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	//}
 
 	/* Create the DNS query */
-	char *dns_querie = NULL;
-	int querie_len = 0; /*length of querie in Bytes*/
-	CreateQuery(name, dns_querie, &querie_len);
+	struct question dns_querie;
+	CreateQuery(name, &dns_querie);
 
 	/* Create DNS server address data struct - sockaddr_in */
 	FillDNSServerData(ip);
