@@ -1,6 +1,9 @@
 
 #include "dns_protocol.h"
 #include "utils.h"
+#include "stdio.h"
+#include "string.h"
+#include "stdlib.h"
 
 #define DNS_PORT 53
 #define NS 2
@@ -10,24 +13,33 @@ SOCKET m_socket = INVALID_SOCKET;
 SOCKADDR_IN dns_address;
 
 const char query_example[35] = "\x00\x0c\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x03\x77\x77\x77\x08\x61\x63\x61\x64\x65\x6d\x69\x61\x03\x65\x64\x75\x00\x00\x01\x00\x01";
+
 void printHexString(const char *query, int len) {
 	for (size_t i = 0; i < len; i++)
 	{
-		printf("%02x", (unsigned char)query[i]);
+		printf("%02x ", (unsigned char)query[i]);
 	}
 	printf("\n");
 }
 
+
+void mem_copy(void *dest, const void *source, int size)
+{
+	char *d = (char*)dest;
+	char *s = (char*)source;
+	for (int i = 0; i < size; i++)
+		d[i] = s[i];
+}
 
 void CreateHeader(struct dns_header *header)
 {
 	header->id = (unsigned short)htons(getpid());
 	header->qr = 0; //for query
 	header->opcode = 0;
-	header->aa = 0;
+	header->aa =0;
 	header->tc = 0;
-	header->rd = htons(1); 
-	header->ra = 0; 
+	header->rd = 0;
+	header->ra = 0;
 	header->z = 0;
 	header->rcode = 0;
 	header->qdcount = htons(1);
@@ -90,11 +102,25 @@ void CreateDomainName(const char *url_address, char *domain_name)
 	*domain_name = 0;
 }
 
-void CreateQuery(const char *url_address, struct question *quest) {
-	CreateHeader(&(quest->header));
-	CreateDomainName(url_address, quest->domain_name);
+void CreateQuestion(struct question *quest)
+{
 	quest->qclass = htons(1); //internet
 	quest->qtype = htons(NS);
+}
+void CreateQuery(const char *url_address, char **query, int *len) {
+	//allocates memory for query!!!!
+	*len = sizeof(struct dns_header) + strlen(url_address) + 2 + sizeof(struct question);
+	*query = (char*)malloc(*len);
+	/* if (NULL == question) */
+	struct dns_header header;
+	CreateHeader(&header);
+
+	struct question quest;
+	CreateQuestion(&quest);
+
+	mem_copy(*query, &header, sizeof(struct dns_header));
+	CreateDomainName(url_address, *query + sizeof(struct dns_header));
+	mem_copy(*query + *len - sizeof(struct question), &quest, sizeof(struct question));
 }
 
 void ParseAnswer(const char *dns_answer, int len, struct hostent *result) {
@@ -110,6 +136,7 @@ void ParseAnswer(const char *dns_answer, int len, struct hostent *result) {
 	}
 	//result->h_addr_list[0] = 
 }
+
 
 struct hostent * dnsQuery(const char * name, const char* ip)
 {
@@ -130,8 +157,9 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	//}
 
 	/* Create the DNS query */
-	struct question dns_query;
-	CreateQuery(name, &dns_query);
+	char* dns_query;
+	int query_len;
+	CreateQuery(name, &dns_query,&query_len);
 
 	/* Create DNS server address data struct - sockaddr_in */
 	FillDNSServerData(ip);

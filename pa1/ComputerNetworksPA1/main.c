@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "utils.h"
 #include "dns_protocol.h"
+#include <stdlib.h>
 
 
 void ToLowerString(char *str)
