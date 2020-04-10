@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 		}
 
 		//struct hostent* result = gethostbyname(user_input);
-		struct hostent* result = dnsQuery(user_input, argv[1]);
+		struct hostent* result = dnsQueryDummy(user_input, argv[1]);
 		if (result == NULL)
 		{
 			printf("NULL result\n"); //TBR

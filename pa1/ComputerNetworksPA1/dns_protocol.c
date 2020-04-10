@@ -23,6 +23,75 @@ void ParseAnswer(const char *dns_answer, struct hostent *result) {
 	/* TO DO */
 }
 
+struct hostent * dnsQueryDummy(const char * name, const char* ip)
+{
+	struct hostent* result = NULL;
+
+	/* Initialize Winsock: */
+	int StartupRes = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	//if (StartupRes != NO_ERROR)
+	//{
+	//	printf("error %ld at WSAStartup( ), ending program.\n", WSAGetLastError());
+	//	return result;
+	//}
+
+	/* allocate hostent struct */
+	result = (struct hostent*)malloc(sizeof(struct hostent));
+	//if (NULL == result) {
+	//	return result;
+	//}
+
+	/* Create DNS server address data struct - sockaddr_in */
+	unsigned long address;
+	address = inet_addr(ip);
+	if (address == INADDR_NONE)
+	{
+		printf("The string \"%s\" cannot be converted into an ip address. ending program.\n", ip);
+		return NULL; /*TODO: ERROR CODE*/
+	}
+	dns_address.sin_family = AF_INET;
+	dns_address.sin_addr.s_addr = address;
+	dns_address.sin_port = htons(DNS_PORT); //Setting the port.
+
+	/* Create socket */
+	if (INVALID_SOCKET == (m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))) {
+		printf("socket failed with error %d\n", WSAGetLastError());
+		return 1; /*TODO: ERROR CODE*/
+	}
+
+	/* Send the Querie (the sendto function handles also the connect!)*/
+	printf("Sending a query to the DNS server...\n");
+	if (SOCKET_ERROR == sendto(m_socket, example_msg, 35, 0, (SOCKADDR *)&dns_address, sizeof(dns_address))) {
+		printf("sendto failed with error: %d\n", WSAGetLastError());
+		//perror();
+		return 1; /* TODO handle error */
+	}
+	printf("Query sent\n");
+
+	SOCKADDR_IN answer_dns_address;
+	answer_dns_address.sin_family = AF_INET;
+	answer_dns_address.sin_addr.s_addr = htonl(INADDR_ANY);
+	answer_dns_address.sin_port = htons(DNS_PORT); //Setting the port.
+	if (bind(m_socket, (SOCKADDR *)&answer_dns_address, sizeof(answer_dns_address)) == SOCKET_ERROR)
+	{
+		printf("bind() failed with error %d\n", WSAGetLastError());
+		return 1;
+	}
+	char dns_answer[ANSWER_MAX_SIZE];
+	if (SOCKET_ERROR == recvfrom(m_socket, dns_answer, ANSWER_MAX_SIZE, 0, NULL, NULL)) {
+		printf("recvfrom failed with error %d\n", WSAGetLastError());
+		return 1;
+	}
+	printf("Answer recived:\n");
+	printf("%s\n", dns_answer);
+
+	/* Winsock Cleanup: */
+	if (WSACleanup() == SOCKET_ERROR)
+		printf("Failed to close Winsocket, error %ld. Ending program.\n", WSAGetLastError());
+
+	return result;
+}
+
 struct hostent * dnsQuery(const char * name, const char* ip)
 {
 	struct hostent* result = NULL;
@@ -101,6 +170,7 @@ int SendQuery(const char *query, int len) {
 	}
 	printf("Query sent:\n");
 	printHexString(query, len); /*debug*/
+
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
 		if (SOCKET_ERROR == closesocket(m_socket)) {
@@ -119,6 +189,15 @@ int RecvAnswer(char *answer, int len) {
 	}
 	
 	SOCKADDR_IN answer_dns_address;
+	answer_dns_address.sin_family = AF_INET;
+	answer_dns_address.sin_addr.s_addr = htonl(INADDR_ANY);
+	answer_dns_address.sin_port = htons(DNS_PORT); //Setting the port.
+	if (bind(m_socket, (SOCKADDR *)&answer_dns_address, sizeof(answer_dns_address)) == SOCKET_ERROR)
+	{
+		printf("bind() failed with error %d\n", WSAGetLastError());
+		return 1;
+	}
+
 	fd_set set;
 	struct timeval timeout;
 	FD_ZERO(&set); /* clear the set */
@@ -139,12 +218,12 @@ int RecvAnswer(char *answer, int len) {
 		return 1;
 	}
 
-	if (SOCKET_ERROR == recvfrom(m_socket, answer, len, 0, (SOCKADDR *)&answer_dns_address, 0)) {
+	if (SOCKET_ERROR == recvfrom(m_socket, answer, len, 0, NULL, NULL)) {
 		printf("recvfrom failed with error %d\n", WSAGetLastError());
 		return 1;
 	}
-	printf("Answer recived.\n");
-
+	printf("Answer recived:\n");
+	printf("%s\n", answer);
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
 		if (SOCKET_ERROR == closesocket(m_socket)) {
