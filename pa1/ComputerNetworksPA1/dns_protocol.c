@@ -20,8 +20,18 @@ void CreateQuery(const char * name, char *dns_querie, int *len) {
 	/* TO DO */
 }
 
-void ParseAnswer(const char *dns_answer, struct hostent *result) {
-	/* TO DO */
+void ParseAnswer(const char *dns_answer, int len, struct hostent *result) {
+	char ip_address[IP_MAX_LEN];
+	printf("%s\n", dns_answer);
+	for (size_t i = 0; i < 4; i++)
+	{
+		printf("%02x", (unsigned char)dns_answer[i]);
+	}
+	for (size_t i = 0; i < 4; i++)
+	{
+		printf("%c", (unsigned char)dns_answer[i]);
+	}
+	//result->h_addr_list[0] = 
 }
 
 struct hostent * dnsQuery(const char * name, const char* ip)
@@ -63,14 +73,15 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	}
 
 	/* Wait 2 seconds to recive the answer from the DNS server */
-	char dns_answer[ANSWER_MAX_SIZE];
-	if (1 == RecvAnswer(&dns_answer[0], ANSWER_MAX_SIZE)) {
+	char dns_answer[MAX_QUERY_SIZE];
+	int answer_len;
+	if (1 == RecvAnswer(dns_answer, &answer_len)) {
 		/* TODO handle error */
 		printf("RecvAnswer() failed.\n");
 	}
 
 	/*Parse the DNS server answer and fill the fields of the hostent struct. */
-	ParseAnswer(dns_answer, result);
+	ParseAnswer(dns_answer, answer_len, result);
 	
 
 	/* Close socket */
@@ -114,7 +125,7 @@ int SendQuery(const char *query, int len) {
 	return 0;
 }
 
-int RecvAnswer(char *answer, int len) {
+int RecvAnswer(char *answer, int *recv_len) {
 	fd_set set;
 	struct timeval timeout;
 	FD_ZERO(&set); /* clear the set */
@@ -135,13 +146,13 @@ int RecvAnswer(char *answer, int len) {
 		return 1;
 	}
 
-	int answer_len;
-	if (SOCKET_ERROR == (answer_len=recvfrom(m_socket, answer, len, 0, NULL, NULL))) {
+	*recv_len = recvfrom(m_socket, answer, MAX_QUERY_SIZE, 0, NULL, NULL);
+	if (SOCKET_ERROR == *recv_len) {
 		printf("recvfrom failed with error %d\n", WSAGetLastError());
 		return 1;
 	}
 	printf("Answer recived:\n");
-	printHexString(answer, answer_len);
+	printHexString(answer, *recv_len);
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
 		if (SOCKET_ERROR == closesocket(m_socket)) {

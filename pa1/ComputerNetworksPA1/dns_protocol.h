@@ -14,6 +14,6 @@ int FillDNSServerData(const char * ip);
 
 int SendQuery(const char * query, int len);
 
-int RecvAnswer(char * answer, int len);
+int RecvAnswer(char *answer, int *recv_len);
 
 #endif
