@@ -29,7 +29,6 @@ void PrintDomainName(const char *domain_name) //this function is not needed...
 	bool first_iteration = true;
 	while (true)
 	{
-
 		int num_of_chars_to_print = *domain_name;
 		if (num_of_chars_to_print == 0)
 			break;
@@ -46,10 +45,8 @@ void PrintDomainName(const char *domain_name) //this function is not needed...
 char CountNumOfCharsBeforeDot(const char *url_address, bool* end_of_string)
 {
 	char counter = 0;
-	while (true)
-	{
-		if (*url_address == '\0')
-		{
+	while (true) {
+		if (*url_address == '\0') {
 			*end_of_string = true;
 			break;
 		}
