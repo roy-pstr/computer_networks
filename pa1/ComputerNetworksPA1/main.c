@@ -48,9 +48,9 @@ int main(int argc, char **argv)
 			//checkwhattodo
 		}
 
-		//IN_ADDR addr;
-		//addr.S_un.S_addr = *(ULONG*)result->h_addr_list[0];
-		/*printf("%s\n",inet_ntoa(addr));*/
+		IN_ADDR addr;
+		addr.S_un.S_addr = *(ULONG*)result->h_addr_list[0];
+		printf("%s\n",inet_ntoa(addr));
 	}
 	
 	return 0;

@@ -1,6 +1,7 @@
 #ifndef _DNS_PROTOCOL_H
 #define _DNS_PROTOCOL_H
 
+#include <stdlib.h>
 #include <stdbool.h>
 #include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
