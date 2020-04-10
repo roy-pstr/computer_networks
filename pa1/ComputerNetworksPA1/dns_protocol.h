@@ -1,9 +1,7 @@
 #ifndef _DNS_PROTOCOL_H
 #define _DNS_PROTOCOL_H
 
-#include <string>
-#include <ws2tcpip.h>
-// Need to link with Ws2_32.lib
+#include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 
 void CreateQuery(const char * name, char * dns_querie, int *len);
