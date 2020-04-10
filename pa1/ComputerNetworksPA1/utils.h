@@ -1,7 +1,7 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
-#define IP_MAX_LEN 16
+#define MAX_IP4_STR_LEN 16
 #define EXPECTED_ARGS_NUM 1
 #define MAX_DOMAIN_LEN 255 //maske sure
 #define MAX_QUERY_LEN 255 /* check this ??? */

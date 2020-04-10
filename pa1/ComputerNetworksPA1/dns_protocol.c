@@ -10,6 +10,8 @@ SOCKET m_socket = INVALID_SOCKET;
 SOCKADDR_IN dns_address;
 
 const char query_example[35] = "\x00\x0c\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x03\x77\x77\x77\x08\x61\x63\x61\x64\x65\x6d\x69\x61\x03\x65\x64\x75\x00\x00\x01\x00\x01";
+const char answer_example[51] = "\x00\x0e\x81\x80\x00\x01\x00\x01\x00\x00\x00\x00\x03\x77\x77\x77\x08\x61\x63\x61\x64\x65\x6d\x69\x61\x03\x65\x64\x75\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00\x01\x2c\x00\x04\x36\xf7\x76\x52";
+
 void printHexString(const char *query, int len) {
 	for (size_t i = 0; i < len; i++)
 	{
@@ -17,7 +19,6 @@ void printHexString(const char *query, int len) {
 	}
 	printf("\n");
 }
-
 
 void CreateHeader(struct dns_header *header)
 {
@@ -98,22 +99,21 @@ void CreateQuery(const char *url_address, struct question *quest) {
 }
 
 void ParseAnswer(const char *dns_answer, int len, struct hostent *result) {
-	char ip_address[IP_MAX_LEN];
-	printf("%s\n", dns_answer);
-	for (size_t i = 0; i < 4; i++)
-	{
-		printf("%02x", (unsigned char)dns_answer[i]);
-	}
-	for (size_t i = 0; i < 4; i++)
-	{
-		printf("%c", (unsigned char)dns_answer[i]);
-	}
-	//result->h_addr_list[0] = 
+	result->h_addr_list[0] = &dns_answer[len - 4];
+	//printf("%s\n", dns_answer);
+	//for (size_t i = 0; i < 4; i++)
+	//{
+	//	printf("%02x", (unsigned char)dns_answer[i]);
+	//}
+	//for (size_t i = 0; i < 4; i++)
+	//{
+	//	printf("%c", (unsigned char)dns_answer[i]);
+	//}
+	
 }
 
 struct hostent * dnsQuery(const char * name, const char* ip)
 {
-	struct hostent* result = NULL;
 
 	/* Initialize Winsock: */
 	int StartupRes = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -124,10 +124,12 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	//}
 
 	/* allocate hostent struct */
-	result = (struct hostent*)malloc(sizeof(struct hostent));
+	struct hostent *result = malloc(sizeof(struct hostent));
 	//if (NULL == result) {
 	//	return result;
 	//}
+	result->h_addr_list = malloc(sizeof(char*));
+	result->h_addr_list[0] = malloc(5);
 
 	/* Create the DNS query */
 	struct question dns_query;
@@ -157,8 +159,8 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	}
 
 	/*Parse the DNS server answer and fill the fields of the hostent struct. */
-	ParseAnswer(dns_answer, answer_len, result);
-	
+	//ParseAnswer(dns_answer, answer_len, result);
+	ParseAnswer(answer_example, 50, result);
 
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
@@ -228,7 +230,7 @@ int RecvAnswer(char *answer, int *recv_len) {
 		return 1;
 	}
 	printf("Answer recived:\n");
-	printHexString(answer, *recv_len);
+	printHexString(answer, *recv_len); /*debug*/
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
 		if (SOCKET_ERROR == closesocket(m_socket)) {
