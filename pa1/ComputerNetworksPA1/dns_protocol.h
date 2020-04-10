@@ -36,7 +36,7 @@ char CountNumOfCharsBeforeDot(const char * url_address, bool * end_of_string);
 
 void CreateDomainName(const char * url_address, char * domain_name);
 
-void CreateQuery(const char *url_address, char *query, int *len);
+void CreateQuery(const char *url_address, char **query, int *len);
 
 void ParseAnswer(const char *dns_answer, int len, struct hostent *result);
 
