@@ -25,11 +25,9 @@ typedef struct dns_header
 typedef struct question
 {
 	struct dns_header header;
-	unsigned short qtype;
-	unsigned short qclass;
-
 	char domain_name[DOMAIN_NAME_MAX_LEN];
-	
+	unsigned short qtype;
+	unsigned short qclass;	
 };
 
 void CreateQuery(const char * name, char * dns_querie, int *len);
