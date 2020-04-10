@@ -2,6 +2,7 @@
 #include "utils.h"
 
 #define DNS_PORT 53
+#define NS 2
 
 WSADATA wsaData;
 SOCKET m_socket = INVALID_SOCKET;
@@ -15,8 +16,30 @@ void printHexString(const char *query, int len) {
 	}
 	printf("\n");
 }
-void CreateQuery(const char * name, char *dns_querie, int *len) {
-	/* TO DO */
+
+void CreateHeader(struct dns_header *header)
+{
+	header->id = (unsigned short)htons(getpid());
+	header->qr = 0; //for query
+	header->opcode = 0;
+	header->aa = 0;
+	header->tc = 0;
+	header->rd = 1; 
+	header->ra = 0; 
+	header->z = 0;
+	header->rcode = 0;
+	header->qdcount = htons(1);
+	header->ancount = 0;
+	header->nscount = 0;
+	header->arcount = 0;	
+}
+
+
+void CreateQuery(const char *url_address, struct question *quest) {
+	CreateHeader(&(quest->header));
+	CreateDomainNAme(url_address, quest->domain_name);
+	quest->qclass = htnos(1); //internet
+	quest->qtype = htons(NS);
 }
 
 void ParseAnswer(const char *dns_answer, struct hostent *result) {
