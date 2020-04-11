@@ -202,8 +202,8 @@ int RecvAnswer(char *answer, int *recv_len) {
 
 int ValidateAnswer(struct answer *answer_st, unsigned short q_id) {
 	/* check same id as query sent */
-	if (q_id != answer_st->id) {
-		printf("Anwer and Question ID are different.\n");/*debug*/
+	if (q_id != htons(answer_st->id)) {
+		printf("Answer and Question ID are different.\n");/*debug*/
 		return TIME_OUT;
 	}
 	/* check for errors */
