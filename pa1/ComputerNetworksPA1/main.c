@@ -27,8 +27,7 @@ int main(int argc, char **argv)
 		struct hostent* result = dnsQuery(user_input, argv[1]);
 		if (result == NULL)
 		{
-			printf("NULL result\n"); //TBR
-			//checkwhattodo
+			continue;
 		}
 
 		IN_ADDR addr;

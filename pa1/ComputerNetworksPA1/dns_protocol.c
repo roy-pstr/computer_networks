@@ -215,7 +215,7 @@ int ValidateAnswer(struct answer *answer_st, unsigned short q_id) {
 void ParseAnswer(const char *dns_answer, int len, struct answer *output) {
 	//strncpy_s(output->id, sizeof(output->id), dns_answer, 2); /* first 2 bytes */
 	TwoChars2Int(dns_answer, &output->id);
-	output->errorcode = dns_answer[ECODE_BYTE] & (0x0f); /* 3rd byte from answer and mask with 00001111 to get the 4 lsb.*/
+	output->errorcode = (unsigned short)dns_answer[ECODE_BYTE] & 0x0f; /* 3rd byte from answer and mask with 00001111 to get the 4 lsb.*/
 	
 	strncpy_s(output->ip_address, sizeof(output->ip_address), &dns_answer[len - IP_OFFSET], IP4_HEX_STR_LEN); /* last 4 bytes */
 
@@ -294,6 +294,7 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	int ret_val;
 	if (NOERROR != (ret_val = ValidateAnswer(&answer_st, q_id))) {
 		printError(ret_val);
+		freeHostentStruct(&result);
 	}
 	else {
 		FillHostent(result, &answer_st);
