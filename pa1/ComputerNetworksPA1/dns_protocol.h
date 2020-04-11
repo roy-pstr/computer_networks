@@ -36,15 +36,17 @@ char CountNumOfCharsBeforeDot(const char * url_address, bool * end_of_string);
 
 void CreateDomainName(const char * url_address, char * domain_name);
 
-void CreateQuery(const char *url_address, char *query, int *len);
+void CreateQuery(const char *url_address, char **query, int *len);
 
 void ParseAnswer(const char *dns_answer, int len, struct hostent *result);
 
 struct hostent * dnsQuery(const char * name, const char * ip);
 
+struct hostent * dnsQueryTest(const char * name, const char * ip);
+
 int FillDNSServerData(const char * ip);
 
-int SendQuery(struct question * quest, int len);
+int SendQuery(char * query, int len);
 
 int RecvAnswer(char *answer, int *recv_len);
 

@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 			continue;
 		}
 
-		//struct hostent* result = gethostbyname(user_input);
+		
 		struct hostent* result = dnsQuery(user_input, argv[1]);
 		if (result == NULL)
 		{
@@ -51,6 +51,7 @@ int main(int argc, char **argv)
 		IN_ADDR addr;
 		addr.S_un.S_addr = *(ULONG*)result->h_addr_list[0];
 		printf("%s\n",inet_ntoa(addr));
+		/* free() hostent .... !!!! */
 	}
 	
 	return 0;
