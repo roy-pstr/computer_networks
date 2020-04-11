@@ -74,7 +74,11 @@ bool InvalidLabelLength(const char *url_address, int max_len)
 	while (*url_address != '\0')
 	{
 		if (*url_address == '.')
+		{
+			if (label_counter == 0) //case two dots in a row
+				return true;
 			label_counter = 0;
+		}
 		else
 			label_counter++;
 
