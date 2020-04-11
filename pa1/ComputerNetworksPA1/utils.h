@@ -9,6 +9,7 @@
 #define ECODE_BYTE 3
 #define IP_OFFSET 4
 #define DATA_LEN_OFFSET 6
+#define MAX_URL_LABEL_LENGTH 63
 /* From 'outputs_format.pdf'. not sure what to do with it*/
 #define NO_ERROR			 0
 #define FORMAT_ERROR		 1
@@ -17,6 +18,13 @@
 #define NOT_IMPLEMENTED		 4
 #define QUERY_REFUSED		 5
 /*********************************************************/
+
+
+void ToLowerString(char *str);
+void PrintSyntaxError();
+
+bool ValidUrlAddress(const char *url_address);
+
 
 
 #endif

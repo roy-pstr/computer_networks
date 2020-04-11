@@ -8,22 +8,6 @@
 #include <stdlib.h>
 
 
-void ToLowerString(char *str)
-{
-	while (*str != '\0')
-		*str++ = tolower(*str);
-}
-
-void PrintSyntaxError()
-{
-	printf("ERROR: BAD NAME\n");
-}
-
-bool VerifyUserInput(const char *input)
-{
-	return false;
-}
-
 int main(int argc, char **argv)
 {
 	assert(argc == EXPECTED_ARGS_NUM + 1);
@@ -35,12 +19,11 @@ int main(int argc, char **argv)
 		ToLowerString(user_input);
 		if (!strcmp(user_input, "quit"))
 			break;
-		if (VerifyUserInput(user_input)) {
+		if (!ValidUrlAddress(user_input)) {
 			PrintSyntaxError();
 			continue;
 		}
 
-		
 		struct hostent* result = dnsQuery(user_input, argv[1]);
 		if (result == NULL)
 		{
