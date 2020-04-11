@@ -28,16 +28,16 @@ void printHexString(const char *query, int len) {
 
 /* Query handling */
 int SendQuery(char * query, int len) {
-	/* Send the Querie (the sendto function handles also the connect!)*/
-	printf("Sending a query to the DNS server...\n");
+	/* Send the Query (the sendto function handles also the connect!)*/
+	printf("Sending a query to the DNS server...\n"); /*debug*/
 	if (SOCKET_ERROR == sendto(m_socket, (char *)query, len, 0, (SOCKADDR *)&dns_address, sizeof(dns_address))) {
 		printf("sendto failed with error: %d\n", WSAGetLastError());
-		//perror();
+		perror("sendto() failed\n");
 		return 1; /* TODO handle error */
 	}
-	printf("Query sent:\n");
+	printf("Query sent:\n"); /*debug*/
 	printHexString(query, len); /*debug*/
-	printHexString(query_example, 35);
+	printHexString(query_example, 35); /*debug*/
 	return 0;
 }
 
@@ -127,7 +127,7 @@ void CreateQuestion(struct question *quest)
 	quest->qtype = htons(TYPE_A);
 }
 
-void CreateQuery(const char *url_address, char **query, int *len) {
+unsigned short CreateQuery(const char *url_address, char **query, int *len) {
 	//allocates memory for query!!!!
 	*len = sizeof(struct dns_header) + strlen(url_address) + 2 + sizeof(struct question);
 	*query = (char*)malloc(*len);
@@ -141,6 +141,7 @@ void CreateQuery(const char *url_address, char **query, int *len) {
 	mem_copy(*query, &header, sizeof(struct dns_header));
 	CreateDomainName(url_address, *query + sizeof(struct dns_header));
 	mem_copy(*query + *len - sizeof(struct question), &quest, sizeof(struct question));
+	return header.id;
 }
 
 int FillDNSServerData(const char *ip) {
@@ -166,27 +167,29 @@ int RecvAnswer(char *answer, int *recv_len) {
 	timeout.tv_sec = RECV_TIMEOUT;
 	timeout.tv_usec = 0;
 	int retval_select = 1;
-	printf("Waiting for an answer from DNS server...\n");
+	printf("Waiting for an answer from DNS server...\n");/*debug*/
 	retval_select = select(0, &set, NULL, NULL, &timeout);
 	if (retval_select == SOCKET_ERROR) {
 		// select error...
 		printf("select() failed with error: %d\n", WSAGetLastError());
+		perror("select() failed\n");
 		return 1;
 	}
 	if (retval_select == 0) {
 		// timeout
-		printf("recvfrom() tiemout.\n");
+		printError(TIME_OUT);
 		return 1;
 	}
 
 	*recv_len = recvfrom(m_socket, answer, MAX_QUERY_LEN, 0, NULL, NULL);
 	if (SOCKET_ERROR == *recv_len) {
 		printf("recvfrom failed with error %d\n", WSAGetLastError());
+		perror("recvfrom() failed\n");
 		return 1;
 	}
-	printf("Answer recived:\n");
+	printf("Answer recived:\n"); /*debug*/
 	printHexString(answer, *recv_len); /*debug*/
-	printHexString(answer_example, 51);
+	printHexString(answer_example, 51); /*debug*/
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
 		if (SOCKET_ERROR == closesocket(m_socket)) {
@@ -197,13 +200,49 @@ int RecvAnswer(char *answer, int *recv_len) {
 	return 0;
 }
 
-void ParseAnswer(const char *dns_answer, int len, struct hostent *result) {
+int ValidateAnswer(struct answer *answer_st, unsigned short q_id) {
+	/* check same id as query sent */
+	if (q_id != answer_st->id) {
+		printf("Anwer and Question ID are different.\n");/*debug*/
+		return TIME_OUT;
+	}
+	/* check for errors */
+	printf("error code: %d\n", answer_st->errorcode);
+	if (answer_st->errorcode != NOERROR) {
+		return answer_st->errorcode;
+	}
+}
+void ParseAnswer2(const char *dns_answer, int len, struct answer *output) {
+	//strncpy_s(output->id, sizeof(output->id), dns_answer, 2); /* first 2 bytes */
+	TwoChars2Int(dns_answer, &output->id);
+	output->errorcode = dns_answer[ECODE_BYTE] & (0x0f); /* 3rd byte from answer and mask with 00001111 to get the 4 lsb.*/
+	
+	strncpy_s(output->ip_address, sizeof(output->ip_address), &dns_answer[len - IP_OFFSET], IP4_HEX_STR_LEN); /* last 4 bytes */
+
+	TwoChars2Int(&dns_answer[len - DATA_LEN_OFFSET], &output->data_len);
+	//unsigned short lsb = (unsigned short)dns_answer[len - DATA_LEN_OFFSET + 1];
+	//unsigned short msb = ((unsigned short)dns_answer[len - DATA_LEN_OFFSET]) << 8;
+	//output->data_len = msb + lsb;
+}
+void FillHostent(struct hostent *result, struct answer *answer_st) {
+	/* ip address */
+	strncpy_s(result->h_addr_list[0], IP4_HEX_STR_LEN + 1, answer_st->ip_address, IP4_HEX_STR_LEN);
+	result->h_length = answer_st->data_len;
+}
+
+int ParseAnswer(const char *dns_answer, int len, struct hostent *result) {
+	/* check id */
+	char id[3];
+	strncpy_s(id, 3, dns_answer, 2);
+	unsigned short q_id_ret = dns_answer[ID_BYTE];
 	/* check for errors */
 	unsigned short error_c = dns_answer[ECODE_BYTE] & (0x0f); /* 3rd byte from answer and mask with 00001111 to get the 4 lsb.*/
 	printf("error code: %d\n", error_c);
-
+	if (error_c != NOERROR) {
+		return error_c;
+	}
 	/* ip address */
-	result->h_addr_list[0] = &dns_answer[len - IP_OFFSET];
+	strncpy_s(result->h_addr_list[0], IP4_HEX_STR_LEN+1, &dns_answer[len - IP_OFFSET], IP4_HEX_STR_LEN);
 
 	/* data length */
 	/* reads bytes 6 and 5 from the end of the answer string and turn them into unsigend int */
@@ -212,7 +251,7 @@ void ParseAnswer(const char *dns_answer, int len, struct hostent *result) {
 	unsigned short data_len = msb + lsb;
 	printf("data_len: %d\n", data_len);
 	result->h_length = data_len;
-
+	return NOERROR;
 }
 
 /* dnsQeury */
@@ -221,37 +260,46 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 
 	/* Initialize Winsock: */
 	int StartupRes = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	//if (StartupRes != NO_ERROR)
-	//{
-	//	printf("error %ld at WSAStartup( ), ending program.\n", WSAGetLastError());
-	//	return result;
-	//}
+	if (StartupRes != NO_ERROR)
+	{
+		printf("error %ld at WSAStartup( ).\n", WSAGetLastError());
+		return NULL;
+	}
 
 	/* allocate hostent struct */
 	struct hostent *result = malloc(sizeof(struct hostent));
-	//if (NULL == result) {
-	//	return result;
-	//}
-	result->h_addr_list = malloc(sizeof(char*));
+	if (NULL == result) {
+		printf("malloc error.\n", WSAGetLastError());
+		return result;
+	}
+	/*TO DO*/
+	result->h_addr_list = malloc(2*sizeof(char*));
 	result->h_addr_list[0] = malloc(5);
+	result->h_addr_list[1] = NULL;
 
 	/* Create the DNS query */
 	char* dns_query;
 	int query_len;
-	CreateQuery(name, &dns_query, &query_len);
+	unsigned short q_id;
+	q_id = CreateQuery(name, &dns_query, &query_len);
+
 	/* Create DNS server address data struct - sockaddr_in */
 	FillDNSServerData(ip);
 
 	/* Create socket */
 	if (INVALID_SOCKET == (m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))) {
 		printf("socket failed with error %d\n", WSAGetLastError());
-		return 1; /*TODO: ERROR CODE*/
+		freeHostentStruct(result);
+		return NULL; /*TODO: ERROR CODE*/
 	}
 
 	/* Send the Query to the DNS server */
 	if (1 == SendQuery(dns_query, query_len)) {
 		/* TODO handle error */
 		printf("SendQuery() failed.\n");
+	}
+	if (dns_query != NULL) {
+		free(dns_query);
 	}
 
 	/* Wait 2 seconds to recive the answer from the DNS server */
@@ -264,7 +312,19 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 
 	/*Parse the DNS server answer and fill the fields of the hostent struct. */
 	//ParseAnswer(dns_answer, answer_len, result);
-	ParseAnswer(dns_answer, answer_len, result);
+	struct answer answer_st;
+	ParseAnswer2(dns_answer, answer_len, &answer_st);
+	int ret_val;
+	if (NOERROR != (ret_val = ValidateAnswer(&answer_st, q_id))) {
+		printError(ret_val);
+	}
+	else {
+		FillHostent(result, &answer_st);
+	}
+	//int ret_val;
+	//if (NOERROR != (ret_val=ParseAnswer(dns_answer, answer_len, result))) {
+	//	printError(ret_val);
+	//}
 
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
@@ -292,4 +352,28 @@ struct hostent * dnsQueryTest(const char * name, const char* ip)
 	if (WSACleanup() == SOCKET_ERROR)
 		printf("Failed to close Winsocket, error %ld. Ending program.\n", WSAGetLastError());
 	return result;
+}
+
+freeHostentStruct(struct hostent **result) {
+	if (NULL != (*result)->h_addr_list) {
+		char *curr = NULL, *next = NULL;
+		int ind = 0;
+		curr = (*result)->h_addr_list[ind];
+		while (NULL != curr) {
+			next = (*result)->h_addr_list[++ind];
+			if (NULL != curr) {
+				free(curr);
+				curr = NULL;
+			}
+			if (NULL != next) {
+				curr = next;
+			}	
+		}	
+	}
+	//free(result->h_name);
+	if (NULL != *result) {
+		free(*result);
+		*result = NULL;
+	}
+	
 }

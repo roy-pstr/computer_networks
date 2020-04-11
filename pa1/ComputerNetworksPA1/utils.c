@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdio.h>
 #include "utils.h"
 
 void ToLowerString(char *str)
@@ -6,10 +7,33 @@ void ToLowerString(char *str)
 	while (*str != '\0')
 		*str++ = tolower(*str);
 }
-
-void PrintSyntaxError()
-{
-	printf("ERROR: BAD NAME\n");
+void printError(int e_val) {
+	switch (e_val)
+	{
+	case FORMAT_ERROR:
+		printf("ERROR: FORMAT\n");
+		break;
+	case SERVER_FAILURE_ERROR:
+		printf("ERROR: SERVER FAILURE\n");
+		break;
+	case NON_EXISTING_DOMAIN:
+		printf("ERROR: NONEXISTING\n");
+		break;
+	case NOT_IMPLEMENTED:
+		printf("ERROR: NOT IMPLEMENTED\n");
+		break;
+	case QUERY_REFUSED:
+		printf("ERROR: REFUSED\n");
+		break;
+	case URL_ERROR:
+		printf("ERROR: BAD NAME\n");
+		break;
+	case TIME_OUT:
+		printf("TIMEOUT\n");
+		break;
+	default:
+		break;
+	}
 }
 
 bool isLetter(char c)
@@ -73,4 +97,10 @@ bool ValidUrlAddress(const char *url_address)
 	if (InvalidLabelLength(url_address, MAX_URL_LABEL_LENGTH))
 		return false;
 	return true;
+}
+
+void TwoChars2Int(const char arr[2], unsigned short *val) {
+	unsigned short lsb = (unsigned short)arr[1];
+	unsigned short msb = ((unsigned short)arr[0]) << 8;
+	*val = msb + lsb;
 }

@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 		if (!strcmp(user_input, "quit"))
 			break;
 		if (!ValidUrlAddress(user_input)) {
-			PrintSyntaxError();
+			printError(URL_ERROR);
 			continue;
 		}
 
@@ -34,7 +34,9 @@ int main(int argc, char **argv)
 		IN_ADDR addr;
 		addr.S_un.S_addr = *(ULONG*)result->h_addr_list[0];
 		printf("%s\n",inet_ntoa(addr));
-		/* free() hostent .... !!!! */
+
+		freeHostentStruct(&result);
+		
 	}
 	
 	return 0;

@@ -30,24 +30,41 @@ typedef struct question
 	unsigned short qclass;	
 }question;
 
+typedef struct answer
+{
+	unsigned short id;
+	unsigned short errorcode;
+	char ip_address[IP4_HEX_STR_LEN + 1];
+	unsigned short data_len;
+
+}answer;
+
 void CreateHeader(struct dns_header * header);
 
 char CountNumOfCharsBeforeDot(const char * url_address, bool * end_of_string);
 
 void CreateDomainName(const char * url_address, char * domain_name);
 
-void CreateQuery(const char *url_address, char **query, int *len);
+unsigned short CreateQuery(const char *url_address, char **query, int *len);
 
-void ParseAnswer(const char *dns_answer, int len, struct hostent *result);
+int ParseAnswer(const char *dns_answer, int len, struct hostent *result);
 
 struct hostent * dnsQuery(const char * name, const char * ip);
 
 struct hostent * dnsQueryTest(const char * name, const char * ip);
+
+freeHostentStruct(struct hostent ** result);
 
 int FillDNSServerData(const char * ip);
 
 int SendQuery(char * query, int len);
 
 int RecvAnswer(char *answer, int *recv_len);
+
+int ValidateAnswer(struct answer * answer_st, unsigned short q_id);
+
+void ParseAnswer2(const char * dns_answer, int len, struct answer * output);
+
+void FillHostent(struct hostent * result, struct answer * answer_st);
 
 #endif
