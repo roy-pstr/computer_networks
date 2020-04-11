@@ -9,6 +9,7 @@
 #define NS 2
 #define TYPE_A 1
 
+id_counter = 0;
 WSADATA wsaData;
 SOCKET m_socket = INVALID_SOCKET;
 SOCKADDR_IN dns_address;
@@ -50,7 +51,8 @@ void mem_copy(void *dest, const void *source, int size)
 
 void CreateHeader(struct dns_header *header)
 {
-	header->id = (unsigned short)htons(getpid());
+	header->id = htons(id_counter);
+	id_counter++; //TBD make sure it belongs in here
 	header->qr = 0; //for query
 	header->opcode = 0;
 	header->aa = 0;
@@ -129,7 +131,7 @@ void CreateQuery(const char *url_address, char **query, int *len) {
 	//allocates memory for query!!!!
 	*len = sizeof(struct dns_header) + strlen(url_address) + 2 + sizeof(struct question);
 	*query = (char*)malloc(*len);
-	/* if (NULL == question) */
+	/* if (NULL == question) */ //TBD, and free where needs to free...
 	struct dns_header header;
 	CreateHeader(&header);
 
