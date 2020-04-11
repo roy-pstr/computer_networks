@@ -57,7 +57,7 @@ void CreateHeader(struct dns_header *header)
 	header->opcode = 0;
 	header->aa = 0;
 	header->tc = 0;
-	header->rd = 0;
+	header->rd = htons(1);
 	header->ra = 0;
 	header->z = 0;
 	header->rcode = 0;
