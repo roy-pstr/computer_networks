@@ -37,7 +37,7 @@ int SendQuery(char * query, int len) {
 	}
 	printf("Query sent:\n"); /*debug*/
 	printHexString(query, len); /*debug*/
-	printHexString(query_example, 35); /*debug*/
+	//printHexString(query_example, 35); /*debug*/
 	return 0;
 }
 
@@ -189,7 +189,7 @@ int RecvAnswer(char *answer, int *recv_len) {
 	}
 	printf("Answer recived:\n"); /*debug*/
 	printHexString(answer, *recv_len); /*debug*/
-	printHexString(answer_example, 51); /*debug*/
+	//printHexString(answer_example, 51); /*debug*/
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
 		if (SOCKET_ERROR == closesocket(m_socket)) {
@@ -212,7 +212,7 @@ int ValidateAnswer(struct answer *answer_st, unsigned short q_id) {
 		return answer_st->errorcode;
 	}
 }
-void ParseAnswer2(const char *dns_answer, int len, struct answer *output) {
+void ParseAnswer(const char *dns_answer, int len, struct answer *output) {
 	//strncpy_s(output->id, sizeof(output->id), dns_answer, 2); /* first 2 bytes */
 	TwoChars2Int(dns_answer, &output->id);
 	output->errorcode = dns_answer[ECODE_BYTE] & (0x0f); /* 3rd byte from answer and mask with 00001111 to get the 4 lsb.*/
@@ -227,31 +227,8 @@ void ParseAnswer2(const char *dns_answer, int len, struct answer *output) {
 void FillHostent(struct hostent *result, struct answer *answer_st) {
 	/* ip address */
 	strncpy_s(result->h_addr_list[0], IP4_HEX_STR_LEN + 1, answer_st->ip_address, IP4_HEX_STR_LEN);
+	result->h_addrtype = AF_INET;
 	result->h_length = answer_st->data_len;
-}
-
-int ParseAnswer(const char *dns_answer, int len, struct hostent *result) {
-	/* check id */
-	char id[3];
-	strncpy_s(id, 3, dns_answer, 2);
-	unsigned short q_id_ret = dns_answer[ID_BYTE];
-	/* check for errors */
-	unsigned short error_c = dns_answer[ECODE_BYTE] & (0x0f); /* 3rd byte from answer and mask with 00001111 to get the 4 lsb.*/
-	printf("error code: %d\n", error_c);
-	if (error_c != NOERROR) {
-		return error_c;
-	}
-	/* ip address */
-	strncpy_s(result->h_addr_list[0], IP4_HEX_STR_LEN+1, &dns_answer[len - IP_OFFSET], IP4_HEX_STR_LEN);
-
-	/* data length */
-	/* reads bytes 6 and 5 from the end of the answer string and turn them into unsigend int */
-	unsigned short lsb = (unsigned short)dns_answer[len - DATA_LEN_OFFSET + 1];
-	unsigned short msb = ((unsigned short)dns_answer[len - DATA_LEN_OFFSET]) << 8;
-	unsigned short data_len = msb + lsb;
-	printf("data_len: %d\n", data_len);
-	result->h_length = data_len;
-	return NOERROR;
 }
 
 /* dnsQeury */
@@ -313,7 +290,7 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	/*Parse the DNS server answer and fill the fields of the hostent struct. */
 	//ParseAnswer(dns_answer, answer_len, result);
 	struct answer answer_st;
-	ParseAnswer2(dns_answer, answer_len, &answer_st);
+	ParseAnswer(dns_answer, answer_len, &answer_st);
 	int ret_val;
 	if (NOERROR != (ret_val = ValidateAnswer(&answer_st, q_id))) {
 		printError(ret_val);

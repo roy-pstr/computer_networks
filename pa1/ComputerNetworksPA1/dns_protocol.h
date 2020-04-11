@@ -47,8 +47,6 @@ void CreateDomainName(const char * url_address, char * domain_name);
 
 unsigned short CreateQuery(const char *url_address, char **query, int *len);
 
-int ParseAnswer(const char *dns_answer, int len, struct hostent *result);
-
 struct hostent * dnsQuery(const char * name, const char * ip);
 
 struct hostent * dnsQueryTest(const char * name, const char * ip);
@@ -63,7 +61,7 @@ int RecvAnswer(char *answer, int *recv_len);
 
 int ValidateAnswer(struct answer * answer_st, unsigned short q_id);
 
-void ParseAnswer2(const char * dns_answer, int len, struct answer * output);
+void ParseAnswer(const char * dns_answer, int len, struct answer * output);
 
 void FillHostent(struct hostent * result, struct answer * answer_st);
 
