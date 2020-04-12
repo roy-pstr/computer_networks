@@ -25,6 +25,41 @@ void printHexString(const char *query, int len) {
 	}
 	printf("\n");
 }
+int fillDNSServerData(const char *ip) {
+	unsigned long address;
+	address = inet_addr(ip);
+	if (address == INADDR_NONE)
+	{
+		printf("The string \"%s\" cannot be converted into an ip address. ending program.\n", ip);
+		return NULL; /*TODO: ERROR CODE*/
+	}
+	dns_address.sin_family = AF_INET;
+	dns_address.sin_addr.s_addr = address;
+	dns_address.sin_port = htons(DNS_PORT); //Setting the port.
+}
+void freeHostentStruct(struct hostent **result) {
+	if (NULL != (*result)->h_addr_list) {
+		char *curr = NULL, *next = NULL;
+		int ind = 0;
+		curr = (*result)->h_addr_list[ind];
+		while (NULL != curr) {
+			next = (*result)->h_addr_list[++ind];
+			if (NULL != curr) {
+				free(curr);
+				curr = NULL;
+			}
+			if (NULL != next) {
+				curr = next;
+			}
+		}
+	}
+	//free(result->h_name);
+	if (NULL != *result) {
+		free(*result);
+		*result = NULL;
+	}
+
+}
 
 /* Query handling */
 int SendQuery(char * query, int len) {
@@ -48,6 +83,7 @@ void mem_copy(void *dest, const void *source, int size)
 	for (int i = 0; i < size; i++)
 		d[i] = s[i];
 }
+
 void EnableRD(struct dns_header *header)
 {
 	header->options = htons(0x0100);
@@ -129,36 +165,18 @@ unsigned short CreateQuery(const char *url_address, char **query, int *len) {
 	//allocates memory for query!!!!
 	*len = sizeof(struct dns_header) + strlen(url_address) + 2 + sizeof(struct question);
 	*query = (char*)malloc(*len);
-	/* if (NULL == question) */ //TBD, and free where needs to free...
 	struct dns_header header;
 	CreateHeader(&header);
-
 	struct question quest;
 	CreateQuestion(&quest);
-	//char header_sample[13] = "\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00";
-	//mem_copy(*query, &header_sample, sizeof(header_sample));
 	mem_copy(*query, &header, sizeof(struct dns_header));
 	CreateDomainName(url_address, *query + sizeof(struct dns_header));
 	mem_copy(*query + *len - sizeof(struct question), &quest, sizeof(struct question));
-	//return header.id
-	return 0;
+	return header.id;
 }
 
-int FillDNSServerData(const char *ip) {
-	unsigned long address;
-	address = inet_addr(ip);
-	if (address == INADDR_NONE)
-	{
-		printf("The string \"%s\" cannot be converted into an ip address. ending program.\n", ip);
-		return NULL; /*TODO: ERROR CODE*/
-	}
-	dns_address.sin_family = AF_INET;
-	dns_address.sin_addr.s_addr = address;
-	dns_address.sin_port = htons(DNS_PORT); //Setting the port.
-}
 
 /* Answer handling */
-
 int RecvAnswer(char *answer, int *recv_len) {
 	fd_set set;
 	struct timeval timeout;
@@ -212,6 +230,7 @@ int ValidateAnswer(struct answer *answer_st, unsigned short q_id) {
 		return answer_st->errorcode;
 	}
 }
+
 void ParseAnswer(const char *dns_answer, int len, struct answer *output) {
 	//strncpy_s(output->id, sizeof(output->id), dns_answer, 2); /* first 2 bytes */
 	TwoChars2Int(dns_answer, &output->id);
@@ -224,6 +243,7 @@ void ParseAnswer(const char *dns_answer, int len, struct answer *output) {
 	//unsigned short msb = ((unsigned short)dns_answer[len - DATA_LEN_OFFSET]) << 8;
 	//output->data_len = msb + lsb;
 }
+
 void FillHostent(struct hostent *result, struct answer *answer_st) {
 	/* ip address */
 	strncpy_s(result->h_addr_list[0], IP4_HEX_STR_LEN + 1, answer_st->ip_address, IP4_HEX_STR_LEN);
@@ -261,7 +281,7 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	q_id = CreateQuery(name, &dns_query, &query_len);
 
 	/* Create DNS server address data struct - sockaddr_in */
-	FillDNSServerData(ip);
+	fillDNSServerData(ip);
 
 	/* Create socket */
 	if (INVALID_SOCKET == (m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))) {
@@ -320,39 +340,3 @@ EXIT:
 	return result;
 }
 
-struct hostent * dnsQueryTest(const char * name, const char* ip)
-{
-	/* Initialize Winsock: */
-	int StartupRes = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	/* allocate hostent struct */
-	struct hostent *result = malloc(sizeof(struct hostent));
-	result = gethostbyname(name);
-	/* Winsock Cleanup: */
-	if (WSACleanup() == SOCKET_ERROR)
-		printf("Failed to close Winsocket, error %ld. Ending program.\n", WSAGetLastError());
-	return result;
-}
-
-freeHostentStruct(struct hostent **result) {
-	if (NULL != (*result)->h_addr_list) {
-		char *curr = NULL, *next = NULL;
-		int ind = 0;
-		curr = (*result)->h_addr_list[ind];
-		while (NULL != curr) {
-			next = (*result)->h_addr_list[++ind];
-			if (NULL != curr) {
-				free(curr);
-				curr = NULL;
-			}
-			if (NULL != next) {
-				curr = next;
-			}	
-		}	
-	}
-	//free(result->h_name);
-	if (NULL != *result) {
-		free(*result);
-		*result = NULL;
-	}
-	
-}

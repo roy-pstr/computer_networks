@@ -42,11 +42,9 @@ unsigned short CreateQuery(const char *url_address, char **query, int *len);
 
 struct hostent * dnsQuery(const char * name, const char * ip);
 
-struct hostent * dnsQueryTest(const char * name, const char * ip);
+void freeHostentStruct(struct hostent ** result);
 
-freeHostentStruct(struct hostent ** result);
-
-int FillDNSServerData(const char * ip);
+int fillDNSServerData(const char * ip);
 
 int SendQuery(char * query, int len);
 
