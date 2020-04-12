@@ -10,14 +10,7 @@
 typedef struct dns_header
 {
 	unsigned short id;
-	unsigned char qr : 1;
-	unsigned char opcode : 4;
-	unsigned char aa : 1;
-	unsigned char tc : 1;
-	unsigned char rd : 1;
-	unsigned char ra : 1;
-	unsigned char z : 3;
-	unsigned char rcode : 4;
+	unsigned short options;
 	unsigned short qdcount;
 	unsigned short ancount;
 	unsigned short nscount;

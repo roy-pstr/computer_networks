@@ -48,19 +48,17 @@ void mem_copy(void *dest, const void *source, int size)
 	for (int i = 0; i < size; i++)
 		d[i] = s[i];
 }
+void EnableRD(struct dns_header *header)
+{
+	header->options = htons(0x0100);
+}
 
 void CreateHeader(struct dns_header *header)
 {
 	header->id = htons(id_counter);
 	id_counter++; //TBD make sure it belongs in here
-	header->qr = 0; //for query
-	header->opcode = 0;
-	header->aa = 0;
-	header->tc = 0;
-	header->rd = 0;
-	header->ra = 0;
-	header->z = 0;
-	header->rcode = 0;
+	header->options = 0;
+	EnableRD(header);
 	header->qdcount = htons(1);
 	header->ancount = 0;
 	header->nscount = 0;
@@ -137,9 +135,9 @@ unsigned short CreateQuery(const char *url_address, char **query, int *len) {
 
 	struct question quest;
 	CreateQuestion(&quest);
-	char header_sample[13] = "\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00";
-	mem_copy(*query, &header_sample, sizeof(header_sample));
-	//mem_copy(*query, &header, sizeof(struct dns_header));
+	//char header_sample[13] = "\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00";
+	//mem_copy(*query, &header_sample, sizeof(header_sample));
+	mem_copy(*query, &header, sizeof(struct dns_header));
 	CreateDomainName(url_address, *query + sizeof(struct dns_header));
 	mem_copy(*query + *len - sizeof(struct question), &quest, sizeof(struct question));
 	//return header.id
