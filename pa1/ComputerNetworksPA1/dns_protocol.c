@@ -57,7 +57,7 @@ void CreateHeader(struct dns_header *header)
 	header->opcode = 0;
 	header->aa = 0;
 	header->tc = 0;
-	header->rd = htons(1);
+	header->rd = 0;
 	header->ra = 0;
 	header->z = 0;
 	header->rcode = 0;
@@ -137,11 +137,11 @@ unsigned short CreateQuery(const char *url_address, char **query, int *len) {
 
 	struct question quest;
 	CreateQuestion(&quest);
-
-	mem_copy(*query, &header, sizeof(struct dns_header));
+	char header_sample[13] = "\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00";
+	mem_copy(*query, &header_sample, sizeof(header_sample));
 	CreateDomainName(url_address, *query + sizeof(struct dns_header));
 	mem_copy(*query + *len - sizeof(struct question), &quest, sizeof(struct question));
-	return header.id;
+	return 0;
 }
 
 int FillDNSServerData(const char *ip) {
@@ -283,8 +283,9 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	char dns_answer[MAX_QUERY_LEN];
 	int answer_len;
 	if (1 == RecvAnswer(dns_answer, &answer_len)) {
-		/* TODO handle error */
+		freeHostentStruct(&result);
 		printf("RecvAnswer() failed.\n");
+		goto EXIT;
 	}
 
 	/*Parse the DNS server answer and fill the fields of the hostent struct. */
@@ -303,7 +304,7 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	//if (NOERROR != (ret_val=ParseAnswer(dns_answer, answer_len, result))) {
 	//	printError(ret_val);
 	//}
-
+EXIT:
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
 		if (SOCKET_ERROR == closesocket(m_socket)) {

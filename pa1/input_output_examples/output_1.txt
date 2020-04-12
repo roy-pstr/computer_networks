@@ -1,38 +1,4 @@
-Default Server:  dns.google
-Address:  2001:4860:4860::8888
-
-> Server:  dns.google
-Address:  2001:4860:4860::8888
-
-Name:    bakara.eng.tau.ac.il
-Address:  132.66.48.12
-
-> Server:  dns.google
-Address:  2001:4860:4860::8888
-
-Name:    btl.gov.il
-Address:  31.168.15.205
-
-> Server:  dns.google
-Address:  2001:4860:4860::8888
-
-Name:    facebook.com
-Addresses:  2a03:2880:f129:83:face:b00c:0:25de
-	  157.240.1.35
-
-> Server:  dns.google
-Address:  2001:4860:4860::8888
-
-Name:    who.int
-Address:  158.232.12.119
-
-> Server:  dns.google
-Address:  2001:4860:4860::8888
-
-> Server:  dns.google
-Address:  2001:4860:4860::8888
-
-Name:    tau.ac.il
-Address:  132.66.11.168
-
-> 
+132.66.48.12
+ERROR: NONEXISTENT
+132.66.16.59
+ERROR: BAD NAME
