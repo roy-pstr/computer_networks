@@ -139,8 +139,10 @@ unsigned short CreateQuery(const char *url_address, char **query, int *len) {
 	CreateQuestion(&quest);
 	char header_sample[13] = "\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00";
 	mem_copy(*query, &header_sample, sizeof(header_sample));
+	//mem_copy(*query, &header, sizeof(struct dns_header));
 	CreateDomainName(url_address, *query + sizeof(struct dns_header));
 	mem_copy(*query + *len - sizeof(struct question), &quest, sizeof(struct question));
+	//return header.id
 	return 0;
 }
 
