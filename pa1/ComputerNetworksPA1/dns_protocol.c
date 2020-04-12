@@ -86,7 +86,7 @@ void mem_copy(void *dest, const void *source, int size)
 
 void EnableRD(struct dns_header *header)
 {
-	header->options = htons(0x0100);
+	header->options |= htons(0x0100);
 }
 
 void CreateHeader(struct dns_header *header)
