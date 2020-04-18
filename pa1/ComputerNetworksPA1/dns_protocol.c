@@ -14,10 +14,6 @@ WSADATA wsaData;
 SOCKET m_socket = INVALID_SOCKET;
 SOCKADDR_IN dns_address;
 
-const char query_example[35] = "\x00\x0c\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x03\x77\x77\x77\x08\x61\x63\x61\x64\x65\x6d\x69\x61\x03\x65\x64\x75\x00\x00\x01\x00\x01";
-
-const char answer_example[51] = "\x00\x0e\x81\x80\x00\x01\x00\x01\x00\x00\x00\x00\x03\x77\x77\x77\x08\x61\x63\x61\x64\x65\x6d\x69\x61\x03\x65\x64\x75\x00\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00\x01\x2c\x00\x04\x36\xf7\x76\x52";
-
 void printHexString(const char *query, int len) {
 	for (size_t i = 0; i < len; i++)
 	{
@@ -36,6 +32,27 @@ int fillDNSServerData(const char *ip) {
 	dns_address.sin_family = AF_INET;
 	dns_address.sin_addr.s_addr = address;
 	dns_address.sin_port = htons(DNS_PORT); //Setting the port.
+}
+ void allocateHostent(struct hostent **ptr) {
+	 *ptr = malloc(sizeof(struct hostent));
+	if (NULL == *ptr) {
+		printf("malloc error.\n");
+		return;
+	}
+	/* handling only one address */
+	(*ptr)->h_addr_list = malloc(2 * sizeof(char*));
+	if (NULL == (*ptr)->h_addr_list) {
+		printf("malloc error.\n");
+		freeHostentStruct(ptr);
+		return;
+	}
+	(*ptr)->h_addr_list[0] = malloc(5);
+	if (NULL == (*ptr)->h_addr_list[0]) {
+		printf("malloc error.\n");
+		freeHostentStruct(ptr);
+		return;
+	}
+	(*ptr)->h_addr_list[1] = NULL;
 }
 void freeHostentStruct(struct hostent **result) {
 	if (NULL != (*result)->h_addr_list) {
@@ -70,8 +87,8 @@ int SendQuery(char * query, int len) {
 		perror("sendto() failed\n");
 		return 1; /* TODO handle error */
 	}
-	printf("Query sent:\n"); /*debug*/
-	printHexString(query, len); /*debug*/
+	//printf("Query sent:\n"); /*debug*/
+	//printHexString(query, len); /*debug*/
 	//printHexString(query_example, 35); /*debug*/
 	return 0;
 }
@@ -205,8 +222,8 @@ int RecvAnswer(char *answer, int *recv_len) {
 		perror("recvfrom() failed\n");
 		return 1;
 	}
-	printf("Answer recived:\n"); /*debug*/
-	printHexString(answer, *recv_len); /*debug*/
+	//printf("Answer recived:\n"); /*debug*/
+	//printHexString(answer, *recv_len); /*debug*/
 	//printHexString(answer_example, 51); /*debug*/
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {
@@ -238,15 +255,8 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	}
 
 	/* allocate hostent struct */
-	struct hostent *result = malloc(sizeof(struct hostent));
-	if (NULL == result) {
-		printf("malloc error.\n", WSAGetLastError());
-		return result;
-	}
-	/*TO DO*/
-	result->h_addr_list = malloc(2*sizeof(char*));
-	result->h_addr_list[0] = malloc(5);
-	result->h_addr_list[1] = NULL;
+	struct hostent *result;
+	allocateHostent(&result);
 
 	/* Create the DNS query */
 	char* dns_query;

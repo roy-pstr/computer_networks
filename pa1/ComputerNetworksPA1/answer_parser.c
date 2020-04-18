@@ -94,7 +94,7 @@ bool ParseAndFindFirstAnswer(int *idx, struct answer *output, unsigned short num
 			strncpy_s(output->ip_address, sizeof(output->ip_address), &dns_answer[*idx + name_length + TYPE_SIZE + CLASS_SIZE + TTL_SIZE + DATA_LEN_SIZE], rdata_len);
 			return true;
 		}
-		*idx += *idx + name_length + TYPE_SIZE + CLASS_SIZE + TTL_SIZE + DATA_LEN_SIZE + rdata_len; /* move idx to start of next rr */
+		*idx += name_length + TYPE_SIZE + CLASS_SIZE + TTL_SIZE + DATA_LEN_SIZE + rdata_len; /* move idx to start of next rr */
 	}
 	return false; /* didnt find an answer! */
 }
