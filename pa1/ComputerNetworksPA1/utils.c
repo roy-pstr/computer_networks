@@ -31,6 +31,9 @@ void printError(int e_val) {
 	case TIME_OUT:
 		printf("TIMEOUT\n");
 		break;
+	case NO_ANSWER_MATH_TYPE_AND_CLASS:
+		printf("MESSAGE: NO ANSWER FOUND WITH CORRESPONDING TYPE AND CLASS OF THE QUERY SENT. TRY AGAIN...\n");
+		break;
 	default:
 		break;
 	}
@@ -103,8 +106,3 @@ bool ValidUrlAddress(const char *url_address)
 	return true;
 }
 
-void TwoChars2Int(const char arr[2], unsigned short *val) {
-	unsigned short lsb = (unsigned short)arr[1];
-	unsigned short msb = ((unsigned short)arr[0]) << 8;
-	*val = msb + lsb;
-}

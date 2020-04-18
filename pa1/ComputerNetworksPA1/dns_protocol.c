@@ -1,10 +1,10 @@
 
-#include "dns_protocol.h"
-#include "utils.h"
 #include "stdio.h"
 #include "string.h"
 #include "stdlib.h"
-
+#include "dns_protocol.h"
+#include "utils.h"
+#include "answer_parser.h"
 #define DNS_PORT 53
 #define NS 2
 #define TYPE_A 1
@@ -218,32 +218,6 @@ int RecvAnswer(char *answer, int *recv_len) {
 	return 0;
 }
 
-int ValidateAnswer(struct answer *answer_st, unsigned short q_id) {
-	/* check same id as query sent */
-	if (q_id != htons(answer_st->id)) {
-		printf("Answer and Question ID are different.\n");/*debug*/
-		return TIME_OUT;
-	}
-	/* check for errors */
-	printf("error code: %d\n", answer_st->errorcode);
-	if (answer_st->errorcode != NOERROR) {
-		return answer_st->errorcode;
-	}
-}
-
-void ParseAnswer(const char *dns_answer, int len, struct answer *output) {
-	//strncpy_s(output->id, sizeof(output->id), dns_answer, 2); /* first 2 bytes */
-	TwoChars2Int(dns_answer, &output->id);
-	output->errorcode = (unsigned short)dns_answer[ECODE_BYTE] & 0x0f; /* 3rd byte from answer and mask with 00001111 to get the 4 lsb.*/
-	
-	strncpy_s(output->ip_address, sizeof(output->ip_address), &dns_answer[len - IP_OFFSET], IP4_HEX_STR_LEN); /* last 4 bytes */
-
-	TwoChars2Int(&dns_answer[len - DATA_LEN_OFFSET], &output->data_len);
-	//unsigned short lsb = (unsigned short)dns_answer[len - DATA_LEN_OFFSET + 1];
-	//unsigned short msb = ((unsigned short)dns_answer[len - DATA_LEN_OFFSET]) << 8;
-	//output->data_len = msb + lsb;
-}
-
 void FillHostent(struct hostent *result, struct answer *answer_st) {
 	/* ip address */
 	strncpy_s(result->h_addr_list[0], IP4_HEX_STR_LEN + 1, answer_st->ip_address, IP4_HEX_STR_LEN);
@@ -311,19 +285,15 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	/*Parse the DNS server answer and fill the fields of the hostent struct. */
 	//ParseAnswer(dns_answer, answer_len, result);
 	struct answer answer_st;
-	ParseAnswer(dns_answer, answer_len, &answer_st);
 	int ret_val;
-	if (NOERROR != (ret_val = ValidateAnswer(&answer_st, q_id))) {
+	if (NOERROR != (ret_val = ParseAnswer(dns_answer, answer_len, q_id, &answer_st))) {
 		printError(ret_val);
 		freeHostentStruct(&result);
 	}
 	else {
 		FillHostent(result, &answer_st);
 	}
-	//int ret_val;
-	//if (NOERROR != (ret_val=ParseAnswer(dns_answer, answer_len, result))) {
-	//	printError(ret_val);
-	//}
+
 EXIT:
 	/* Close socket */
 	if (m_socket != INVALID_SOCKET) {

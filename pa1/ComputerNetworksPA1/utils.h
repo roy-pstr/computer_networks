@@ -21,14 +21,15 @@
 #define QUERY_REFUSED		 5
 #define URL_ERROR			6
 #define TIME_OUT			7
+#define NO_ANSWER_MATH_TYPE_AND_CLASS				8
 /*********************************************************/
 
+#include <stdbool.h>
 
 void ToLowerString(char *str);
 void printError(int e_val);
 
 bool ValidUrlAddress(const char *url_address);
 
-void TwoChars2Int(const char arr[2], unsigned short * val);
 
 #endif
