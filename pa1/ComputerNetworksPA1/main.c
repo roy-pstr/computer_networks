@@ -10,7 +10,10 @@
 
 int main(int argc, char **argv)
 {
-	assert(argc == EXPECTED_ARGS_NUM + 1);
+	if (argc != EXPECTED_ARGS_NUM + 1) {
+		perror("not enough argumnets");
+		return -1;
+	}
 
 	char user_input[MAX_DOMAIN_LEN];
 	while (true)

@@ -46,8 +46,8 @@ int ParseHeader(unsigned short *number_of_answers, const char *dns_answer, unsig
 	/* number of queries */
 	unsigned short number_of_queries = HexaStringToUnsignedShort(&dns_answer[QUESTIONS], 2);
 	if (number_of_queries > 1) {
-		printf("Supports no more than 1 query (%d queries recived).", number_of_queries);
-		//assert(false); /* debug */
+		printf("Supports no more than 1 query (%d queries recived). Try again...", number_of_queries);
+		return GENERAL_ERROR;
 	}
 
 	/* number of rrs recived */
@@ -116,7 +116,7 @@ int ParseAnswer(const char *dns_answer, int len, unsigned short match_id, struct
 
 	/* RRs */
 	if (!ParseAndFindFirstAnswer(&idx, output, number_of_answers, query_type, query_class, dns_answer)) {
-		return NO_ANSWER_MATH_TYPE_AND_CLASS;
+		return NO_ANSWER_MATCH_TYPE_AND_CLASS;
 	}
 
 	return NO_ERROR;

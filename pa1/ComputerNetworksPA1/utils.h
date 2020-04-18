@@ -21,7 +21,8 @@
 #define QUERY_REFUSED		 5
 #define URL_ERROR			6
 #define TIME_OUT			7
-#define NO_ANSWER_MATH_TYPE_AND_CLASS				8
+#define NO_ANSWER_MATCH_TYPE_AND_CLASS				8
+#define GENERAL_ERROR 9
 /*********************************************************/
 
 #include <stdbool.h>

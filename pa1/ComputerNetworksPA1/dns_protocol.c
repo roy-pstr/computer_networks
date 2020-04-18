@@ -192,7 +192,6 @@ unsigned short CreateQuery(const char *url_address, char **query, int *len) {
 	return header.id;
 }
 
-
 /* Answer handling */
 int RecvAnswer(char *answer, int *recv_len) {
 	fd_set set;
@@ -277,7 +276,9 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	/* Send the Query to the DNS server */
 	if (1 == SendQuery(dns_query, query_len)) {
 		/* TODO handle error */
+		freeHostentStruct(&result);
 		printf("SendQuery() failed.\n");
+		goto EXIT;
 	}
 	if (dns_query != NULL) {
 		free(dns_query);
