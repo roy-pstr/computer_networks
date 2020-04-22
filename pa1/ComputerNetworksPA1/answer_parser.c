@@ -1,6 +1,7 @@
 #include "answer_parser.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define DOMAIN_NAME_LENGTH_WHEN_OFFSET_MODE 2
 #define OFFSET_MODE_MASK 0xc0
@@ -12,7 +13,7 @@ unsigned short HexaStringToUnsignedShort(const unsigned char *chars_arr, int num
 	return lsb;
 }
 
-int ParseNameLength(char *domain_str) {
+int ParseNameLength(const char *domain_str) {
 	int result = 0, curr_ind = 0;
 	unsigned short next_lbl_len = HexaStringToUnsignedShort(&domain_str[curr_ind], 1);
 	/* check if using offset */

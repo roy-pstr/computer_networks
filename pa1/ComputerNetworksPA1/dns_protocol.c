@@ -26,33 +26,35 @@ int fillDNSServerData(const char *ip) {
 	address = inet_addr(ip);
 	if (address == INADDR_NONE)
 	{
-		printf("The string \"%s\" cannot be converted into an ip address. ending program.\n", ip);
-		return NULL; /*TODO: ERROR CODE*/
+		printf("The string \"%s\" cannot be converted into an ip address.\n", ip);
+		return IP_ERROR; /*TODO: ERROR CODE*/
 	}
 	dns_address.sin_family = AF_INET;
 	dns_address.sin_addr.s_addr = address;
 	dns_address.sin_port = htons(DNS_PORT); //Setting the port.
+	return NO_ERROR;
 }
- void allocateHostent(struct hostent **ptr) {
+ int allocateHostent(struct hostent **ptr) {
 	 *ptr = malloc(sizeof(struct hostent));
 	if (NULL == *ptr) {
-		printf("malloc error.\n");
-		return;
+		perror("malloc error.\n");
+		return 1;
 	}
 	/* handling only one address */
 	(*ptr)->h_addr_list = malloc(2 * sizeof(char*));
 	if (NULL == (*ptr)->h_addr_list) {
-		printf("malloc error.\n");
+		perror("malloc error.\n");
 		freeHostentStruct(ptr);
-		return;
+		return 1;
 	}
 	(*ptr)->h_addr_list[0] = malloc(5);
 	if (NULL == (*ptr)->h_addr_list[0]) {
-		printf("malloc error.\n");
+		perror("malloc error.\n");
 		freeHostentStruct(ptr);
-		return;
+		return 1;
 	}
 	(*ptr)->h_addr_list[1] = NULL;
+	return 0;
 }
 void freeHostentStruct(struct hostent **result) {
 	if (NULL != (*result)->h_addr_list) {
@@ -70,7 +72,6 @@ void freeHostentStruct(struct hostent **result) {
 			}
 		}
 	}
-	//free(result->h_name);
 	if (NULL != *result) {
 		free(*result);
 		*result = NULL;
@@ -83,13 +84,9 @@ int SendQuery(char * query, int len) {
 	/* Send the Query (the sendto function handles also the connect!)*/
 	printf("Sending a query to the DNS server...\n"); /*debug*/
 	if (SOCKET_ERROR == sendto(m_socket, (char *)query, len, 0, (SOCKADDR *)&dns_address, sizeof(dns_address))) {
-		printf("sendto failed with error: %d\n", WSAGetLastError());
 		perror("sendto() failed\n");
 		return 1; /* TODO handle error */
 	}
-	//printf("Query sent:\n"); /*debug*/
-	//printHexString(query, len); /*debug*/
-	//printHexString(query_example, 35); /*debug*/
 	return 0;
 }
 
@@ -182,6 +179,10 @@ unsigned short CreateQuery(const char *url_address, char **query, int *len) {
 	//allocates memory for query!!!!
 	*len = sizeof(struct dns_header) + strlen(url_address) + 2 + sizeof(struct question);
 	*query = (char*)malloc(*len);
+	if (NULL == *query) {
+		perror("malloc error.\n");
+		return 0;
+	}
 	struct dns_header header;
 	CreateHeader(&header);
 	struct question quest;
@@ -205,7 +206,6 @@ int RecvAnswer(char *answer, int *recv_len) {
 	retval_select = select(0, &set, NULL, NULL, &timeout);
 	if (retval_select == SOCKET_ERROR) {
 		// select error...
-		printf("select() failed with error: %d\n", WSAGetLastError());
 		perror("select() failed\n");
 		return 1;
 	}
@@ -244,6 +244,7 @@ void FillHostent(struct hostent *result, struct answer *answer_st) {
 /* dnsQeury */
 struct hostent * dnsQuery(const char * name, const char* ip)
 {
+	char* dns_query = NULL;
 
 	/* Initialize Winsock: */
 	int StartupRes = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -255,42 +256,39 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 
 	/* allocate hostent struct */
 	struct hostent *result;
-	allocateHostent(&result);
+	if (1 == allocateHostent(&result)) {
+		goto EXIT_WITH_ERROR;
+	}
 
 	/* Create the DNS query */
-	char* dns_query;
 	int query_len;
 	unsigned short q_id;
 	q_id = CreateQuery(name, &dns_query, &query_len);
-
+	if (NULL == dns_query) {
+		goto EXIT_WITH_ERROR;
+	}
 	/* Create DNS server address data struct - sockaddr_in */
-	fillDNSServerData(ip);
+	if (NO_ERROR != fillDNSServerData(ip)) {
+		goto EXIT_WITH_ERROR;
+	}
 
 	/* Create socket */
 	if (INVALID_SOCKET == (m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))) {
 		printf("socket failed with error %d\n", WSAGetLastError());
-		freeHostentStruct(result);
-		return NULL; /*TODO: ERROR CODE*/
+		goto EXIT_WITH_ERROR;
 	}
 
 	/* Send the Query to the DNS server */
 	if (1 == SendQuery(dns_query, query_len)) {
-		/* TODO handle error */
-		freeHostentStruct(&result);
-		printf("SendQuery() failed.\n");
-		goto EXIT;
+		goto EXIT_WITH_ERROR;
 	}
-	if (dns_query != NULL) {
-		free(dns_query);
-	}
+	
 
 	/* Wait 2 seconds to recive the answer from the DNS server */
 	char dns_answer[MAX_QUERY_LEN];
 	int answer_len;
 	if (1 == RecvAnswer(dns_answer, &answer_len)) {
-		freeHostentStruct(&result);
-		printf("RecvAnswer() failed.\n");
-		goto EXIT;
+		goto EXIT_WITH_ERROR;
 	}
 
 	/*Parse the DNS server answer and fill the fields of the hostent struct. */
@@ -299,11 +297,12 @@ struct hostent * dnsQuery(const char * name, const char* ip)
 	int ret_val;
 	if (NOERROR != (ret_val = ParseAnswer(dns_answer, answer_len, q_id, &answer_st))) {
 		printError(ret_val);
-		freeHostentStruct(&result);
+		goto EXIT_WITH_ERROR;
 	}
 	else {
 		FillHostent(result, &answer_st);
 	}
+
 
 EXIT:
 	/* Close socket */
@@ -319,5 +318,12 @@ EXIT:
 		printf("Failed to close Winsocket, error %ld. Ending program.\n", WSAGetLastError());
 
 	return result;
+
+EXIT_WITH_ERROR:
+	freeHostentStruct(&result);
+	if (dns_query != NULL) {
+		free(dns_query);
+	}
+	goto EXIT;
 }
 

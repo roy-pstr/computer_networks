@@ -33,8 +33,7 @@ typedef struct answer
 	unsigned short data_len;
 
 }answer;
-
-unsigned short HexaStringToUnsignedShort(const char * chars_arr, int num_size_in_bytes);
+unsigned short HexaStringToUnsignedShort(const unsigned char *chars_arr, int num_size_in_bytes);
 
 int ParseAnswer(const char * dns_answer, int len, unsigned short match_id, answer * output);
 

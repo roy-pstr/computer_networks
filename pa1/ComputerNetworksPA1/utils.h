@@ -23,6 +23,7 @@
 #define TIME_OUT			7
 #define NO_ANSWER_MATCH_TYPE_AND_CLASS				8
 #define GENERAL_ERROR 9
+#define IP_ERROR 9
 /*********************************************************/
 
 #include <stdbool.h>
