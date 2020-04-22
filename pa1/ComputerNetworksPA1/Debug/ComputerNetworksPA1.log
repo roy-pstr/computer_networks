@@ -1,3 +1,0 @@
-﻿  main.c
-c:\users\user\source\repos\computernetworkspa1\computernetworkspa1\main.c(83): warning C4013: 'gets' undefined; assuming extern returning int
-  ComputerNetworksPA1.vcxproj -> C:\Users\user\source\repos\ComputerNetworksPA1\Debug\ComputerNetworksPA1.exe

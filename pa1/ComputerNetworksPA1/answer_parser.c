@@ -37,8 +37,15 @@ int ParseHeader(unsigned short *number_of_answers, const char *dns_answer, unsig
 		return TIME_OUT;
 	}
 
+	unsigned short flags = HexaStringToUnsignedShort(&dns_answer[FLAGS], 2);
+	/* QR bit */
+	unsigned short qr = (flags & QR_BIT_MASK)>>15;
+	if (qr != 1) {
+		printf("QR bit wrong value. Try again...");
+		return GENERAL_ERROR;
+	}
 	/* ERROR_CODE */
-	unsigned short errorcode = HexaStringToUnsignedShort(&dns_answer[FLAGS], 2) & 0x000f; /* last 4 bits from the FLAGS short desc. */
+	unsigned short errorcode = flags & ERROR_CODE_MASK; /* last 4 bits from the FLAGS short desc. */
 	if (errorcode != NO_ERROR) {
 		return errorcode;
 	}

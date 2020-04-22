@@ -2,6 +2,11 @@
 #define _ANSWER_PARSER_H
 
 #include "utils.h"
+
+#define ERROR_CODE_MASK 0x000f
+
+#define QR_BIT_MASK 0x8000
+
 enum header_idx {
 	ID = 0,
 	FLAGS = 2,
