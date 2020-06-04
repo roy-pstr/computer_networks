@@ -4,7 +4,12 @@
 typedef struct packet_st
 {
 	int id;
+	int len;
 	int curr_len;
+	int arrival_time; /* the time the packet arrived */
+	int start_time; /* the time the packet start sending */
+	int done_time; /* the time the packet finished sending */
+
 	packet_st *next;
 }packet_st;
 
