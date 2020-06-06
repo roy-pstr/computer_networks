@@ -128,7 +128,6 @@
     <ClInclude Include="flow.h" />
     <ClInclude Include="packet.h" />
     <ClInclude Include="scheduler.h" />
-    <ClInclude Include="utills.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
