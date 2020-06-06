@@ -6,19 +6,20 @@
 #define ARGS_NUM 4
 
 
-//int main(int argc, char **argv)
-//{
-//
-//	assert(argc == ARGS_NUM);
-//	Args args;
-//	parseArgs(argv, &args); /* output -> int type, char * name, int size */
-//	
-//	openFiles(); /* return pointer to the input file, output file and stats file */
-//	
-//	runScheduler();
-//
-//	closeFiles();
-//}
+int main(int argc, char **argv)
+{
+
+	assert(argc == ARGS_NUM);
+	Args args;
+	parseArgs(argv, &args); /*Doron: tested*/
+	
+	Files files;
+	openFiles(args.name, &files); /* Doron: didnt test but should work */
+	
+	runScheduler();
+
+	closeFiles();
+}
 
 
 /*
