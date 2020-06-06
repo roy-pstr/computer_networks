@@ -25,7 +25,6 @@ typedef struct flow_st
 	// queue of packets:
 	packet_st* head;
 	packet_st* curr_pckt;
-	int pckts_num;
 
 	//flow linked list
 	struct flow_st *next;
@@ -40,6 +39,8 @@ bool flowsAreEqual(flow_st *f1, flow_st *f2);
 void flowStep(flow_st *flow, int step_size, int time, FILE * log_file);
 
 flow_st *findNextNonEmptyFlow(flow_st *head, flow_st *flow);
+
+void storePacket(const char *line, flow_st **flow_head);
 
 //addPckt(flow_st *f) {
 //	/* add packet at the end of the list */

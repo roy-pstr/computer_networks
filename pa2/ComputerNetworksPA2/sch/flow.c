@@ -2,7 +2,10 @@
 #include <assert.h>
 #include "string.h"
 #include "flow.h"
+#include "packet.h"
+#include "utils.h"
 
+#define NO_WEIGHT_GIVEN -1
 /* internal functions */
 void flowNextPacket(flow_st * flow)
 {
@@ -92,10 +95,68 @@ bool flowEmpty(flow_st *flow) {
 
 bool flowsAreEqual(flow_st *f1, flow_st *f2)
 {
-	if (strcmp(f1->id, f2->id))
-		return false;
-
-	return true;
+	return !(strcmp(f1->id, f2->id));
 }
+
+
+void parse_line(const char *line, flow_st *flow, packet_st *packet)
+{
+	char *curr_line_ptr = line;			//points on pktID
+	packet->id = atoi(curr_line_ptr);
+
+	curr_line_ptr = getPointerAfterSpace(curr_line_ptr); //points on Time
+	packet->start_time = atoi(curr_line_ptr);
+
+	curr_line_ptr = getPointerAfterSpace(curr_line_ptr); //points on Sadd
+	char *end_of_flow_id_ptr = curr_line_ptr;
+
+	for (int i = 0; i < 4; i++) //skip 4 spaces
+		end_of_flow_id_ptr = getPointerAfterSpace(end_of_flow_id_ptr);
+
+	end_of_flow_id_ptr--; //points on end of Dport
+
+	for (int i = 0; curr_line_ptr < end_of_flow_id_ptr; i++, curr_line_ptr++)
+		flow->id[i] = *curr_line_ptr;
+
+	curr_line_ptr = getPointerAfterSpace(curr_line_ptr); //points on length
+	packet->curr_len = atoi(curr_line_ptr);
+
+	curr_line_ptr = getPointerAfterSpace(curr_line_ptr); //points on weight or NULL
+	if (curr_line_ptr == NULL)
+		flow->weight = NO_WEIGHT_GIVEN;
+	else
+		flow->weight = atoi(curr_line_ptr);
+}
+
+flow_st *getFlowPointer(flow_st *flow_head, flow_st *new_flow)
+{
+	if (flow_head == NULL)
+		return NULL;
+
+	while (true)
+	{
+		flow_head = flow_head->next;
+		if (flow_head == NULL)
+			return NULL;
+
+		if (flowsAreEqual(flow_head, new_flow))
+			return flow_head;
+	}
+}
+
+void storePacket(const char *line, flow_st **flow_head)
+{
+	flow_st new_flow;
+	packet_st new_packet;
+
+	parse_line(line, &new_flow, &new_packet);
+
+	flow_st *new_flow_ptr = getFlowPointer(*flow_head, &new_flow); 
+	if (new_flow_ptr == NULL)
+		new_flow_ptr = addNewFlowToList(flow_head, &new_flow); //remmember to allocate memory. attention - function returns flow pointer
+	
+	addNewPacketToFlow(new_flow_ptr, &new_packet); //remmember to allocate memory
+}
+
 
 

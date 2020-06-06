@@ -15,6 +15,7 @@ typedef struct packet_st
 	struct packet_st *next;
 }packet_st;
 
+bool timeToSendPacket(const char *line, int time);
 bool pcktDone(packet_st * pckt);
 void pcktStep(packet_st *pckt, int size);
 bool pcktStart(packet_st * pckt);

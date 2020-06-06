@@ -24,12 +24,12 @@ int main(int argc, char **argv)
 
 /*
 Doron's functions:
-parsargs
-openfiles
-packet input
-store packet
-endoffile
-closefiles
+parsargs - done & tested
+openfiles - done
+packet input - done, changed to timeToSendPacket
+store packet - 
+endoffile - fgets handles this.
+closefiles - done
 cleanmem
 */
 
@@ -42,3 +42,8 @@ cleanmem
 //		printArgs(&args);
 //		return 0;
 //}
+
+
+/* Dorons comments:
+-time should be long int(?)
+*/
