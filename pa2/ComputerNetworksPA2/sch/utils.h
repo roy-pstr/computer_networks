@@ -19,9 +19,9 @@ typedef struct Files
 }Files;
 
 void parseArgs(char **argv, Args *args);
-void printArgs(Args *args); //debugging
+void printArgs(Args *args); //debugging function
 void openFiles(const char *path, Files *files);
-
+void closeFiles(Files *files);
 
 #endif
 

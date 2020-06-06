@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 	
 	runScheduler();
 
-	closeFiles();
+	closeFiles(&files); /* Doron: didnt test but must work */
 }
 
 

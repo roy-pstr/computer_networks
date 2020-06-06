@@ -20,7 +20,7 @@ void parseArgs(char **argv, Args *args)
 	args->size = atoi(argv[3]);	 
 }
 
-/* debugging */
+/* debugging function */
 void printArgs(Args *args)
 {
 	printf("------Printing Args ------\n");
@@ -51,11 +51,17 @@ void openOneFile(const char *head_path, const char *tail_path, FILE **fp, const 
 	free(file_path);
 }
 
-
 void openFiles(const char *head_path, Files *files)
 {
 	openOneFile(head_path, "_in.txt",    &(files->input_file),  "r");
 	openOneFile(head_path, "_out.txt",   &(files->output_file), "w");
 	openOneFile(head_path, "_stat.txt",  &(files->input_file),  "w");
+}
+
+void closeFiles(Files *files)
+{
+	fclose(files->input_file);
+	fclose(files->output_file);
+	fclose(files->stats_file);
 }
 
