@@ -14,8 +14,18 @@ packet_st * getPacket(flow_st * flow)
 	return flow->curr_pckt;
 }
 
-void getStats(flow_st * flow, stats_st *stats) {
+int countPackets(flow_st * flow) {
+	int counter = 0;
+	packet_st *curr_packet = flow->head;
+	while (curr_packet != NULL) {
+		counter++;
+		curr_packet = curr_packet->next;
+	}
+	return counter;
+}
 
+void getStats(flow_st * flow, stats_st *stats) {
+	stats->pcktsNum = countPackets(flow);
 }
 
 /* external functions */
@@ -24,7 +34,7 @@ void writeStats(flow_st * head, FILE * stats_file) {
 	stats_st curr_stats;
 	while (curr_f != NULL) {
 		getStats(curr_f, &curr_stats);
-		writeStatLog(stats_file, curr_f->id, curr_f->pckts_num, curr_stats.maxDelay, curr_stats.avgDelay, curr_stats.maxBuff, curr_stats.avgBuff);
+		writeStatLog(stats_file, curr_f->id, curr_stats.pcktsNum, curr_stats.maxDelay, curr_stats.avgDelay, curr_stats.maxBuff, curr_stats.avgBuff);
 		curr_f = curr_f->next;
 	}
 }

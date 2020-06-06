@@ -7,10 +7,12 @@
 
 typedef struct stats_st
 {
+	int pcktsNum;
 	int maxDelay;
 	double avgDelay; 
 	int maxBuff;
 	double avgBuff;
+
 }stats_st;
 
 typedef struct flow_st
