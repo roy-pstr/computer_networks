@@ -5,22 +5,27 @@
 #include "packet.h"
 #include "utils.h"
 
-#define NO_WEIGHT_GIVEN -1
-
 /* internal functions */
-void nextPacket(flow_st * flow)
+void initFlow(Flow * flow) {
+	flow->curr_pckt = NULL;
+	flow->cycle_steps_done = 0;
+	flow->head = NULL;
+	flow->next = NULL;
+	flow->weight = 1;
+}
+void nextPacket(Flow * flow)
 {
 	flow->curr_pckt = flow->curr_pckt->next;
 }
 
-packet_st * getPacket(flow_st * flow)
+Packet * getPacket(Flow * flow)
 {
 	return flow->curr_pckt;
 }
 
-int countPackets(flow_st * flow) {
+int countPackets(Flow * flow) {
 	int counter = 0;
-	packet_st *curr_packet = flow->head;
+	Packet *curr_packet = flow->head;
 	while (curr_packet != NULL) {
 		counter++;
 		curr_packet = curr_packet->next;
@@ -28,20 +33,77 @@ int countPackets(flow_st * flow) {
 	return counter;
 }
 
-void getStats(flow_st * flow, stats_st *stats) {
+void getStats(Flow * flow, stats_st *stats) {
 	stats->pcktsNum = countPackets(flow);
 }
 
-flow_st *addNewFlow(flow_st **flow_head, flow_st *new_flow) {
+Flow *addNewFlow(Flow **head, Flow *new_flow) {
+	Flow *last_flow = *head;
+	
+	/* first flow in list */
+	if (last_flow == NULL) {
+		*head = new_flow;
+		return *head;
+	}
 
+	/* otherwise, find last flow in list */
+	while (last_flow->next != NULL) {
+		last_flow = last_flow->next;
+	}
+	last_flow->next = new_flow;
+	return last_flow->next;
 }
 
-void addNewPacket(flow_st *flow, packet_st *pckt) {
+void addNewPacket(Flow *flow, Packet *pckt) {
+	Packet *last_pckt = flow->head;
+	/* no packets in flow yet */
+	if (last_pckt == NULL) {
+		flow->head = pckt;
+	}
+	else{
+		/*otherwise, add packet to the end of packet list */
+		while (last_pckt->next != NULL) {
+			last_pckt = last_pckt->next;
+		}
+		last_pckt->next = pckt;
+	}
+	/* case when adding new packet the the curr_packet pointer is pointing to NULL, can happen due to:
+		1. first initailazation 
+		2. flow sent all packets so pointing to NULL and new packet arrives. */
+	if (flow->curr_pckt == NULL) {
+		flow->curr_pckt = pckt;
+	}
 }
 
 /* external functions */
-void writeStats(flow_st * head, FILE * stats_file) {
-	flow_st *curr_f = head;
+bool flowStepDone(Flow *flow, int type, int quant_size) {
+	/* verify input and get the current packet in the flow */
+	assert(flow != NULL);
+	Packet *pckt = getPacket(flow);
+	assert(pckt != NULL);
+	switch (type)
+	{
+	case RR:
+		return pcktDone(pckt, 0);
+		break;
+	case DRR:
+		return pcktDone(pckt, quant_size);
+		break;
+	default:
+		assert(false);
+		break;
+	}
+}
+void sendByte(Flow *flow) {
+	/* verify input and get the current packet in the flow */
+	assert(flow != NULL);
+	Packet *pckt = getPacket(flow);
+	assert(pckt != NULL);
+	pcktStep(pckt, 1);
+}
+
+void writeStats(Flow * head, FILE * stats_file) {
+	Flow *curr_f = head;
 	stats_st curr_stats;
 	while (curr_f != NULL) {
 		getStats(curr_f, &curr_stats);
@@ -50,10 +112,10 @@ void writeStats(flow_st * head, FILE * stats_file) {
 	}
 }
 
-void flowStep(flow_st *flow, int step_size, int time, FILE * log_file) {
+void flowStep(Flow *flow, int step_size, int time, FILE * log_file) {
 	/* verify input and get the current packet in the flow */
 	assert(flow != NULL);
-	packet_st *pckt = getPacket(flow);
+	Packet *pckt = getPacket(flow);
 	assert(pckt != NULL);
 
 	/* check if this is the first time proccess the current packet */
@@ -75,39 +137,39 @@ void flowStep(flow_st *flow, int step_size, int time, FILE * log_file) {
 	}
 }
 
-flow_st *findNextNonEmptyFlow(flow_st *head, flow_st *flow) {
+Flow *findNextNonEmptyFlow(Flow *head, Flow *flow) {
 	assert(NULL != head);
 	assert(NULL != flow);
-	flow_st *start_f = flow;
-	flow_st *curr_f = flow;
+	Flow *start_f = flow;
+	Flow *curr_f = flow;
 
-	while (flowEmpty(curr_f)) {
+	do {
+		curr_f = curr_f->next;
+		/* check if we went over ALL flows in list */
 		if (curr_f == start_f) {
 			/* all flows in list are empty! */
 			return NULL;
 		}
-		curr_f = curr_f->next;
+		/* if we reached the end of the list, go back to the begging */
 		if (curr_f == NULL) {
-			/* if reached the last flow, go back to head */
 			curr_f = head;
 		}
-	}
+	} while (flowEmpty(curr_f));
 	return curr_f;
 }
 
-bool flowEmpty(flow_st *flow) {
-	assert(NULL == flow);
+bool flowEmpty(Flow *flow) {
+	assert(NULL != flow);
 	/* if the current packet of the flow is NULL - the flow is empty, no more packet to send */
 	return (NULL == getPacket(flow));
 }
 
-bool flowsAreEqual(flow_st *f1, flow_st *f2)
+bool flowsAreEqual(Flow *f1, Flow *f2)
 {
 	return !(strcmp(f1->id, f2->id));
 }
 
-
-void parse_line(const char *line, flow_st *flow, packet_st *packet)
+void parseLine(const char *line, Flow *flow, Packet *packet)
 {
 	char *curr_line_ptr = line;			//points on pktID
 	packet->id = atoi(curr_line_ptr);
@@ -123,20 +185,20 @@ void parse_line(const char *line, flow_st *flow, packet_st *packet)
 
 	end_of_flow_id_ptr--; //points on end of Dport
 
-	for (int i = 0; curr_line_ptr < end_of_flow_id_ptr; i++, curr_line_ptr++)
+	int i;
+	for (i = 0; curr_line_ptr < end_of_flow_id_ptr; i++, curr_line_ptr++)
 		flow->id[i] = *curr_line_ptr;
+	flow->id[i] = '\0';
 
 	curr_line_ptr = getPointerAfterSpace(curr_line_ptr); //points on length
-	packet->curr_len = atoi(curr_line_ptr);
+	packet->len = packet->curr_len = atoi(curr_line_ptr);
 
 	curr_line_ptr = getPointerAfterSpace(curr_line_ptr); //points on weight or NULL
-	if (curr_line_ptr == NULL)
-		flow->weight = NO_WEIGHT_GIVEN;
-	else
+	if (curr_line_ptr != NULL)
 		flow->weight = atoi(curr_line_ptr);
 }
 
-flow_st *getFlowPointer(flow_st *flow_head, flow_st *new_flow)
+Flow *findFlow(Flow *flow_head, Flow *new_flow)
 {
 	if (flow_head == NULL)
 		return NULL;
@@ -152,18 +214,29 @@ flow_st *getFlowPointer(flow_st *flow_head, flow_st *new_flow)
 	}
 }
 
-void storePacket(const char *line, flow_st **flow_head)
+void storePacket(const char *line, Flow **flow_head)
 {
-	flow_st new_flow;
-	packet_st new_packet;
+	Flow given_flow;
+	initFlow(&given_flow);
 
-	parse_line(line, &new_flow, &new_packet);
+	Packet *new_packet = (Packet *)malloc(sizeof(Packet));
+	assert(NULL != new_packet);
+	initPacket(new_packet);
 
-	flow_st *new_flow_ptr = getFlowPointer(*flow_head, &new_flow); 
-	if (new_flow_ptr == NULL)
-		new_flow_ptr = addNewFlow(flow_head, &new_flow); //remmember to allocate memory. attention - function returns flow pointer
+	parseLine(line, &given_flow, new_packet);
+
+	/* search the given flow in the flow list */
+	Flow *curr_flow = findFlow(*flow_head, &given_flow); // attention - function returns flow pointer
 	
-	addNewPacket(new_flow_ptr, &new_packet); //remmember to allocate memory
+	/* if flow not exist, create new flow and add to end of list */
+	if (curr_flow == NULL) {
+		Flow *new_flow = (Flow *)malloc(sizeof(Flow));
+		*new_flow = given_flow; /* deep copy flow */
+		curr_flow = addNewFlow(flow_head, new_flow); // attention - function returns flow pointer
+	}
+
+	/* add packet to flow */
+	addNewPacket(curr_flow, new_packet); //remmember to allocate memory
 }
 
 

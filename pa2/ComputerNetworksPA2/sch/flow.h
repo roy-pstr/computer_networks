@@ -23,24 +23,26 @@ typedef struct flow_st
 	int cycle_steps_done;
 
 	// queue of packets:
-	packet_st* head;
-	packet_st* curr_pckt;
+	Packet* head;
+	Packet* curr_pckt;
 
 	//flow linked list
 	struct flow_st *next;
-}flow_st;
+}Flow;
 
-void writeStats(flow_st * head, FILE * stats_file); 
+bool flowStepDone(Flow * flow, int type);
 
-bool flowEmpty(flow_st * flow);
+void writeStats(Flow * head, FILE * stats_file);
 
-bool flowsAreEqual(flow_st *f1, flow_st *f2);
+bool flowEmpty(Flow * flow);
 
-void flowStep(flow_st *flow, int step_size, int time, FILE * log_file);
+bool flowsAreEqual(Flow *f1, Flow *f2);
 
-flow_st *findNextNonEmptyFlow(flow_st *head, flow_st *flow);
+void flowStep(Flow *flow, int step_size, int time, FILE * log_file);
 
-void storePacket(const char *line, flow_st **flow_head);
+Flow *findNextNonEmptyFlow(Flow *head, Flow *flow);
+
+void storePacket(const char *line, Flow **flow_head);
 
 //addPckt(flow_st *f) {
 //	/* add packet at the end of the list */

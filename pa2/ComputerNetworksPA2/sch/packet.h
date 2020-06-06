@@ -13,12 +13,13 @@ typedef struct packet_st
 	int done_time; /* the time the packet finished sending */
 
 	struct packet_st *next;
-}packet_st;
+}Packet;
 
-bool timeToSendPacket(const char *line, int time);
-bool pcktDone(packet_st * pckt);
-void pcktStep(packet_st *pckt, int size);
-bool pcktStart(packet_st * pckt);
+bool timeToRecivePacket(const char *line, int time);
+void initPacket(Packet * p);
+bool pcktDone(Packet * pckt);
+void pcktStep(Packet *pckt, int size);
+bool pcktStart(Packet * pckt);
 
 #endif
 

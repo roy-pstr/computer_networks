@@ -55,7 +55,7 @@ void openFiles(const char *head_path, Files *files)
 {
 	openOneFile(head_path, "_in.txt",    &(files->input_file),  "r");
 	openOneFile(head_path, "_out.txt",   &(files->output_file), "w");
-	openOneFile(head_path, "_stat.txt",  &(files->input_file),  "w");
+	openOneFile(head_path, "_stat.txt",  &(files->stats_file),  "w");
 }
 
 void closeFiles(Files *files)
@@ -108,15 +108,12 @@ void writeStatLog(FILE *fp, char *flow, int numPkts, int maxDelay, double avgDel
 char *getPointerAfterSpace(const char *str)
 {
 	char *output = str;
-	while (true)
+	while (*output != ' ')
 	{
-		if (output == '\0' || output == '\n')
+		if (*output == '\0' || *output == '\n')
 			return NULL;
-		if (output == ' ')
-		{
-			output++;
-			return output;
-		}
 		output++;
 	}
+	output++;
+	return output;
 }

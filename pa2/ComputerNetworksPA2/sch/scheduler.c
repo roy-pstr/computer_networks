@@ -1,14 +1,19 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <assert.h>
 #include "utils.h"
 #include "scheduler.h"
 #include "packet.h"
 #include "flow.h"
 
 
-flow_st *schedulerStep(flow_st *head, flow_st *curr_flow, int step_size, int time, FILE * log_file) {
+Flow *schedulerStep(Flow *head, Flow *curr_flow, int type, int step_size, int time, FILE * log_file) {
+	if (flowStepDone(curr_flow, type)) {
+		curr_flow->cycle_steps_done++;
+	}
+	
 	/* preforms one step = sends the basic quentom size of bytes per time unit from the current flow */
-	flowStep(curr_flow, step_size, time, log_file);
+	//flowStep(curr_flow, step_size, time, log_file);
 
 	/* procceds to next flow or stay in current flow */
 	if (curr_flow->cycle_steps_done == curr_flow->weight) {
@@ -24,32 +29,39 @@ flow_st *schedulerStep(flow_st *head, flow_st *curr_flow, int step_size, int tim
 
 void runScheduler(Args *args, Files *files)
 {
-	flow_st *flow_head = NULL;
-	flow_st *curr_flow = NULL;
+	Flow *flow_head = NULL;
+	Flow *curr_flow = NULL;
 	int time = 0;
 	bool flows_stack_empty = false;
-	bool no_more_inputs = false;
+	bool packets_input_done = false;
 	
+	char line[MAX_LINE_LEN];
+	/* read first line */
+	if (fgets(line, MAX_LINE_LEN, files->input_file) == NULL) {
+		/* empty input file ? */
+		assert(false);
+	}
+
 	/* loop over time: every iter is one time unit step */
 	while (!flows_stack_empty) {
-		char line[MAX_LINE_LEN];
-
-		if (fgets(line, MAX_LINE_LEN, files->input_file) == NULL)
-			no_more_inputs = true; /* no more packets in the input file */
-
-		/* every iter: check if any packets arrives in this time unit */
-		while (timeToSendPacket(line, time)) {
-			/* if any packet arrived, store them in the flow stack. */
-			/* can handle more than 1 packet per time unit! */
-
-			storePacket(line, &flow_head);
-			if (fgets(line, MAX_LINE_LEN, files->input_file) == NULL) {
-				no_more_inputs = true; /* no more packets in the input file */
-				break;
+		
+		if (packets_input_done == false) {
+			/* check if it is time to recive the packet */
+			while (timeToRecivePacket(line, time)) {
+				/* store packet in the flow stack. */
+				storePacket(line, &flow_head);
+				if (curr_flow == NULL) {
+					/* first flow to be added, link to curr_flow */
+					curr_flow = flow_head;
+				}
+				/* read next line (packet) */
+				if (fgets(line, MAX_LINE_LEN, files->input_file) == NULL) {
+					packets_input_done = true; /* no more packets in the input file */
+					break;
+				}
 			}
 		}
-
-
+		
 
 		/*	preform one scheduler step.
 			sends the next quantom bytes unit 
@@ -57,11 +69,12 @@ void runScheduler(Args *args, Files *files)
 									otherwise will return the next flow in the queue
 			if returns NULL -> all flows are empty */
 		if (curr_flow != NULL) {
-			curr_flow = schedulerStep(flow_head, curr_flow, args->step_size, time, files->output_file);
+			sendByte(curr_flow);
+			curr_flow = schedulerStep(flow_head, curr_flow,args->scheduler_type, args->step_size, time, files->output_file);
 		}
 
 		/* exit loop condition */
-		if (curr_flow == NULL && no_more_inputs) {
+		if (curr_flow == NULL && packets_input_done) {
 			/* finished send all the packets */
 			flows_stack_empty = true;
 			/*Doron: break? */
