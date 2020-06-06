@@ -6,8 +6,9 @@
 #include "utils.h"
 
 #define NO_WEIGHT_GIVEN -1
+
 /* internal functions */
-void flowNextPacket(flow_st * flow)
+void nextPacket(flow_st * flow)
 {
 	flow->curr_pckt = flow->curr_pckt->next;
 }
@@ -29,6 +30,13 @@ int countPackets(flow_st * flow) {
 
 void getStats(flow_st * flow, stats_st *stats) {
 	stats->pcktsNum = countPackets(flow);
+}
+
+flow_st *addNewFlow(flow_st **flow_head, flow_st *new_flow) {
+
+}
+
+void addNewPacket(flow_st *flow, packet_st *pckt) {
 }
 
 /* external functions */
@@ -63,7 +71,7 @@ void flowStep(flow_st *flow, int step_size, int time, FILE * log_file) {
 	/* check if the current packet was fully sent after the last step */
 	if (pcktDone(pckt)) {
 		/* procced to the next packet inside this flow */
-		flowNextPacket(flow);
+		nextPacket(flow);
 	}
 }
 
@@ -153,9 +161,9 @@ void storePacket(const char *line, flow_st **flow_head)
 
 	flow_st *new_flow_ptr = getFlowPointer(*flow_head, &new_flow); 
 	if (new_flow_ptr == NULL)
-		new_flow_ptr = addNewFlowToList(flow_head, &new_flow); //remmember to allocate memory. attention - function returns flow pointer
+		new_flow_ptr = addNewFlow(flow_head, &new_flow); //remmember to allocate memory. attention - function returns flow pointer
 	
-	addNewPacketToFlow(new_flow_ptr, &new_packet); //remmember to allocate memory
+	addNewPacket(new_flow_ptr, &new_packet); //remmember to allocate memory
 }
 
 

@@ -34,8 +34,8 @@ void runScheduler(Args *args, Files *files)
 	while (!flows_stack_empty) {
 		char line[MAX_LINE_LEN];
 
-		if (fgest(line, MAX_LINE_LEN, files->input_file) == NULL)
-			no_more_inputs = true;
+		if (fgets(line, MAX_LINE_LEN, files->input_file) == NULL)
+			no_more_inputs = true; /* no more packets in the input file */
 
 		/* every iter: check if any packets arrives in this time unit */
 		while (timeToSendPacket(line, time)) {
@@ -43,16 +43,13 @@ void runScheduler(Args *args, Files *files)
 			/* can handle more than 1 packet per time unit! */
 
 			storePacket(line, &flow_head);
-			if (fgest(line, MAX_LINE_LEN, files->input_file) == NULL) {
-				no_more_inputs = true;
+			if (fgets(line, MAX_LINE_LEN, files->input_file) == NULL) {
+				no_more_inputs = true; /* no more packets in the input file */
 				break;
 			}
 		}
 
-		/* check if there are more packets in the input file */
-		//if (endOfFile(files->input_file)) {
-		//	no_more_inputs = true;
-		//}
+
 
 		/*	preform one scheduler step.
 			sends the next quantom bytes unit 
