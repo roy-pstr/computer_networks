@@ -1,4 +1,5 @@
 #include "packet.h"
+#include <assert.h>
 
 bool pcktDone(packet_st *pckt) {
 	return (pckt->curr_len == 0);
@@ -15,7 +16,10 @@ bool pcktStart(packet_st *pckt) {
 
 }
 
-bool hasNewPacket(FILE *input_file, int time)
+bool timeToSendPacket(const char *line, int curr_time)
 {
-
+	char *time_pointer = getPointerAfterSpace(line);
+	int time = atoi(time_pointer);
+	assert(curr_time <= time);
+	return curr_time == time;
 }

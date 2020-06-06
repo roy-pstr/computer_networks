@@ -32,16 +32,21 @@ void runScheduler(Args *args, Files *files)
 	
 	/* loop over time: every iter is one time unit step */
 	while (!flows_stack_empty) {
-		char next_line[MAX_LINE_LEN];
+		char line[MAX_LINE_LEN];
 
-		//get new line from file!!
-
+		if (fgest(line, MAX_LINE_LEN, files->input_file) == NULL)
+			no_more_inputs = true;
 
 		/* every iter: check if any packets arrives in this time unit */
-		while (hasNewPacket(files->input_file, time)) {
+		while (timeToSendPacket(line, time)) {
 			/* if any packet arrived, store them in the flow stack. */
 			/* can handle more than 1 packet per time unit! */
-			//storePackets(files->input_file, time, flow_head);
+
+			storePacket(line, &flow_head);
+			if (fgest(line, MAX_LINE_LEN, files->input_file) == NULL) {
+				no_more_inputs = true;
+				break;
+			}
 		}
 
 		/* check if there are more packets in the input file */
@@ -62,6 +67,7 @@ void runScheduler(Args *args, Files *files)
 		if (curr_flow == NULL && no_more_inputs) {
 			/* finished send all the packets */
 			flows_stack_empty = true;
+			/*Doron: break? */
 		}
 		
 		/* time unit step */

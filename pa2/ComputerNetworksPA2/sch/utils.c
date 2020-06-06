@@ -104,3 +104,19 @@ void writeStatLog(FILE *fp, char *flow, int numPkts, int maxDelay, double avgDel
 	strcat(log_line, avgBuff_str);
 	fprintf(fp, "%s\n", log_line);
 }
+
+char *getPointerAfterSpace(const char *str)
+{
+	char *output = str;
+	while (true)
+	{
+		if (output == '\0' || output == '\n')
+			return NULL;
+		if (output == ' ')
+		{
+			output++;
+			return output;
+		}
+		output++;
+	}
+}
