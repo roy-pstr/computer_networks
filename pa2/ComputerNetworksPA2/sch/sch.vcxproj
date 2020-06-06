@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{9243E4AC-2C78-432D-87A9-FE7EC2FC990F}</ProjectGuid>
     <RootNamespace>sch</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -85,6 +85,9 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -119,12 +122,14 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="packet.c" />
     <ClCompile Include="scheduler.c" />
+    <ClCompile Include="utils.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="flow.h" />
     <ClInclude Include="packet.h" />
     <ClInclude Include="scheduler.h" />
     <ClInclude Include="utills.h" />
+    <ClInclude Include="utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

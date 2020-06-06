@@ -10,7 +10,7 @@ typedef struct packet_st
 	int start_time; /* the time the packet start sending */
 	int done_time; /* the time the packet finished sending */
 
-	packet_st *next;
+	struct packet_st *next;
 }packet_st;
 
 bool pcktDone(packet_st * pckt);
