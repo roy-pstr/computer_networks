@@ -3,12 +3,14 @@
 #include "scheduler.h"
 
 #define FLOW_MAX_NUM 32000
+#define ID_STR_LEN 13
+#define MAX_LINE_LEN 1000 //Doron: this one should be verified
 
 typedef struct Args
 {
 	int scheduler_type;
 	char *name;
-	int size;
+	int step_size;
 } Args;
 
 typedef struct Files

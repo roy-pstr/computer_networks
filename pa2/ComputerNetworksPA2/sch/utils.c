@@ -17,7 +17,7 @@ void parseArgs(char **argv, Args *args)
 
 	args->name = argv[2];
 
-	args->size = atoi(argv[3]);	 
+	args->step_size = atoi(argv[3]);	 
 }
 
 /* debugging function */
@@ -32,7 +32,7 @@ void printArgs(Args *args)
 	else
 		assert(false);
 	printf("name = %s\n", args->name);
-	printf("size = %d\n", args->size);
+	printf("step_size = %d\n", args->step_size);
 
 	printf("----Done Printing Args ----\n");
 }

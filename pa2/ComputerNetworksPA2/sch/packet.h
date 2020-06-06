@@ -1,6 +1,7 @@
 #ifndef _PACKET_H
 #define _PACKET_H
 #include <stdbool.h>
+
 typedef struct packet_st
 {
 	int id;
