@@ -1,11 +1,13 @@
 #ifndef _UTILS_H
 #define _UTILS_H
-#include "scheduler.h"
 #include <stdio.h>
 
 #define FLOW_MAX_NUM 32000
 #define ID_STR_LEN 13
 #define MAX_LINE_LEN 1000 //Doron: this one should be verified
+
+#define RR  0
+#define DRR 1
 
 typedef struct Args
 {
@@ -14,7 +16,7 @@ typedef struct Args
 	int step_size;
 } Args;
 
-typedef struct Files
+typedef struct Files_st
 {
 	FILE *input_file;
 	FILE *output_file;

@@ -41,13 +41,13 @@ void runScheduler(Args *args, Files *files)
 		while (hasNewPacket(files->input_file, time)) {
 			/* if any packet arrived, store them in the flow stack. */
 			/* can handle more than 1 packet per time unit! */
-			storePackets(files->input_file, time, flow_head);
+			//storePackets(files->input_file, time, flow_head);
 		}
 
 		/* check if there are more packets in the input file */
-		if (endOfFile(files->input_file)) {
-			no_more_inputs = true;
-		}
+		//if (endOfFile(files->input_file)) {
+		//	no_more_inputs = true;
+		//}
 
 		/*	preform one scheduler step.
 			sends the next quantom bytes unit 
@@ -69,5 +69,5 @@ void runScheduler(Args *args, Files *files)
 	}
 
 	writeStats(flow_head, files->stats_file);
-	cleanMem();
+	//cleanMem();
 }

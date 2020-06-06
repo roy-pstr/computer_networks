@@ -33,15 +33,15 @@ void writeStats(flow_st * head, FILE * stats_file);
 
 bool flowEmpty(flow_st * flow);
 
-bool floesAreEqual(flow_st *f1, flow_st *f2);
+bool flowsAreEqual(flow_st *f1, flow_st *f2);
 
 void flowStep(flow_st *flow, int step_size, int time, FILE * log_file);
 
 flow_st *findNextNonEmptyFlow(flow_st *head, flow_st *flow);
 
-addPckt(flow_st *f) {
-	/* add packet at the end of the list */
-}
+//addPckt(flow_st *f) {
+//	/* add packet at the end of the list */
+//}
 
 #endif
 

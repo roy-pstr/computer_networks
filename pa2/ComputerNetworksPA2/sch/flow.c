@@ -71,6 +71,7 @@ flow_st *findNextNonEmptyFlow(flow_st *head, flow_st *flow) {
 			curr_f = head;
 		}
 	}
+	return curr_f;
 }
 
 bool flowEmpty(flow_st *flow) {
@@ -79,15 +80,9 @@ bool flowEmpty(flow_st *flow) {
 	return (NULL == getPacket(flow));
 }
 
-bool floesAreEqual(flow_st *f1, flow_st *f2)
+bool flowsAreEqual(flow_st *f1, flow_st *f2)
 {
-	if (f1->dadd != f2->dadd)
-		return false;
-	if (f1->sadd != f2->dadd)
-		return false;
-	if (strcmp(f1->dadd, f2->dadd))
-		return false;
-	if (strcmp(f1->sadd, f2->sadd))
+	if (strcmp(f1->id, f2->id))
 		return false;
 
 	return true;
