@@ -5,6 +5,14 @@
 #include "utils.h"
 #include <stdio.h>
 
+typedef struct stats_st
+{
+	int maxDelay;
+	double avgDelay; 
+	int maxBuff;
+	double avgBuff;
+}stats_st;
+
 typedef struct flow_st
 {
 	char id[MAX_LINE_LEN]; /* "Sadd Sport Dadd Dport" */
@@ -21,13 +29,15 @@ typedef struct flow_st
 	struct flow_st *next;
 }flow_st;
 
+void writeStats(flow_st * head, FILE * stats_file); 
+
 bool flowEmpty(flow_st * flow);
 
 bool floesAreEqual(flow_st *f1, flow_st *f2);
 
 void flowStep(flow_st *flow, int step_size, int time, FILE * log_file);
 
-flow_st * nextFlow(flow_st * flow);
+flow_st *findNextNonEmptyFlow(flow_st *head, flow_st *flow);
 
 addPckt(flow_st *f) {
 	/* add packet at the end of the list */

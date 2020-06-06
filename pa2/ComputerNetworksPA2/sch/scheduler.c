@@ -68,6 +68,6 @@ void runScheduler(Args *args, Files *files)
 		time++; 
 	}
 
-	writeStats();
+	writeStats(flow_head, files->stats_file);
 	cleanMem();
 }
