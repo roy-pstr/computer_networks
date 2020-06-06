@@ -6,14 +6,20 @@
 #include "flow.h"
 
 
-flow_st *schedulerStep(flow_st *flow) {
-	if (flow->curr_num_of_steps_done == flow->weight) {
-		return nextFlow(flow);
+flow_st *schedulerStep(flow_st *head, flow_st *curr_flow, int step_size, int time, FILE * log_file) {
+	/* preforms one step = sends the basic quentom size of bytes per time unit from the current flow */
+	flowStep(curr_flow, step_size, time, log_file);
+
+	/* procceds to next flow or stay in current flow */
+	if (curr_flow->cycle_steps_done == curr_flow->weight) {
+		curr_flow->cycle_steps_done = 0;
+		curr_flow = findNextNonEmptyFlow(head, curr_flow);
 	}
-	if (flowEmpty(flow)) {
-		return nextFlow(flow);
+	if (flowEmpty(curr_flow)) {
+		//flow->cycle_steps_done = 0; TBA -> check if we need to zero the steps counter even when flow empty but not done sending all packets per cycle!
+		curr_flow = findNextNonEmptyFlow(head, curr_flow);
 	}
-	return flow;
+	return curr_flow;
 }
 
 void runScheduler(Args *args, Files *files)
@@ -43,20 +49,25 @@ void runScheduler(Args *args, Files *files)
 			no_more_inputs = true;
 		}
 
-		/* sends the next part of the packet per time unit */
-		/* if the packet fully sent, will move the flows' packts pointer to the next packet */
-		packetStep(curr_flow, args->step_size);
-		/*  proceeds to the next packet that need to be sent.
-			could be a packet in the same flow or packet in the next flow.
-			if last flow, will go back to the first flow and start a new round */
-		curr_flow = schedulerStep(curr_flow);
+		/*	preform one scheduler step.
+			sends the next quantom bytes unit 
+			return the same flow	if more bytes to be sent from this flow 
+									otherwise will return the next flow in the queue
+			if returns NULL -> all flows are empty */
+		if (curr_flow != NULL) {
+			curr_flow = schedulerStep(flow_head, curr_flow, args->step_size, time, files->output_file);
+		}
 
+		/* exit loop condition */
 		if (curr_flow == NULL && no_more_inputs) {
 			/* finished send all the packets */
 			flows_stack_empty = true;
 		}
-		time++; /* time unit step */
+		
+		/* time unit step */
+		time++; 
 	}
 
+	writeStats();
 	cleanMem();
 }

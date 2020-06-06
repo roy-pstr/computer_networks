@@ -16,6 +16,7 @@ typedef struct packet_st
 
 bool pcktDone(packet_st * pckt);
 void pcktStep(packet_st *pckt, int size);
+bool pcktStart(packet_st * pckt);
 
 #endif
 

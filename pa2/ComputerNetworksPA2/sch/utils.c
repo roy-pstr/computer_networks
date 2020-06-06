@@ -1,7 +1,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
-#include <stdio.h>
+
 #include <stdlib.h>
 #include "utils.h"
 
@@ -65,3 +65,42 @@ void closeFiles(Files *files)
 	fclose(files->stats_file);
 }
 
+void writeLog(FILE *fp, int time, int id) {
+	/* writes time: id to fp*/
+	char log_line[MAX_LINE_LEN];
+	char time_str[MAX_LINE_LEN];
+	char id_str[MAX_LINE_LEN];
+	sprintf(time_str, "%d", time);
+	sprintf(id_str, "%d", id);
+	strcpy(log_line, time_str);
+	strcat(log_line, ": ");
+	strcat(log_line, id_str);
+	fprintf(fp, "%s\n", log_line);
+}
+
+void writeStatLog(FILE *fp, char *flow, int numPkts, int maxDelay, double avgDelay, int maxBuff, double avgBuff) {
+	/* writes 'Sadd Sport Dadd Dport numPkts maxDelay avgDelay maxBuff avgBuff' to fp*/
+	char log_line[MAX_LINE_LEN];
+	char numPkts_str[MAX_LINE_LEN];
+	char maxDelay_str[MAX_LINE_LEN];
+	char avgDelay_str[MAX_LINE_LEN]; 
+	char maxBuff_str[MAX_LINE_LEN];
+	char avgBuff_str[MAX_LINE_LEN];
+	sprintf(numPkts_str, "%d", numPkts);
+	sprintf(maxDelay_str, "%d", maxDelay);
+	sprintf(avgDelay_str, "%.2f", avgDelay);
+	sprintf(maxBuff_str, "%d", maxBuff);
+	sprintf(avgBuff_str, "%.2f", avgBuff);
+	strcpy(log_line, flow);
+	strcat(log_line, " ");
+	strcat(log_line, numPkts_str);
+	strcat(log_line, " ");
+	strcat(log_line, maxDelay_str);
+	strcat(log_line, " ");
+	strcat(log_line, avgDelay_str);
+	strcat(log_line, " ");
+	strcat(log_line, maxBuff_str);
+	strcat(log_line, " ");
+	strcat(log_line, avgBuff_str);
+	fprintf(fp, "%s\n", log_line);
+}

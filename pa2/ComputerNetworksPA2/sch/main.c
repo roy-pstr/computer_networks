@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	Files files;
 	openFiles(args.name, &files); /* Doron: didnt test but should work */
 	
-	runScheduler();
+	runScheduler(&args, &files);
 
 	closeFiles(&files); /* Doron: didnt test but must work */
 }
