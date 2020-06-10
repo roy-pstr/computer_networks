@@ -28,8 +28,6 @@ void printArgs(Args *args); //debugging function
 void openFiles(const char *path, Files *files);
 void closeFiles(Files *files);
 
-void writeLog(FILE * fp, int time, int id);
-
 void writeStatLog(FILE * fp, char * flow, int numPkts, int maxDelay, double avgDelay, int maxBuff, double avgBuff);
 
 char *getPointerAfterSpace(const char *str);

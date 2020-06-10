@@ -16,8 +16,12 @@ typedef struct packet_st
 }Packet;
 
 bool timeToRecivePacket(const char *line, int time);
+void freePacketList(Packet * head);
+void writeLog(FILE * fp, Packet * p);
 void initPacket(Packet * p);
-bool pcktDone(Packet * pckt);
+bool pcktDone(Packet * pckt, int quant_size);
+bool pcktEmpty(Packet * pckt);
+bool pcktFull(Packet * pckt);
 void pcktStep(Packet *pckt, int size);
 bool pcktStart(Packet * pckt);
 

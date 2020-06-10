@@ -6,23 +6,38 @@
 #include "utils.h"
 
 /* internal functions */
-void initFlow(Flow * flow) {
+void initFlow(Flow * flow, int step_size) {
 	flow->curr_pckt = NULL;
 	flow->cycle_steps_done = 0;
 	flow->head = NULL;
 	flow->next = NULL;
-	flow->weight = 1;
-}
-void nextPacket(Flow * flow)
-{
-	flow->curr_pckt = flow->curr_pckt->next;
+	flow->weight = step_size;
+	flow->max_buffer = 0;
+	flow->done_time = 0;
 }
 
-Packet * getPacket(Flow * flow)
-{
-	return flow->curr_pckt;
+int countFullPackets(Flow * flow) {
+	int counter = 0;
+	Packet *curr_packet = flow->head;
+	while (curr_packet != NULL) {
+		if (pcktFull(curr_packet)) {
+			counter++;
+		}
+		curr_packet = curr_packet->next;
+	}
+	return counter;
 }
-
+int countNonEmptyPackets(Flow * flow) {
+	int counter = 0;
+	Packet *curr_packet = flow->head;
+	while (curr_packet != NULL) {
+		if (!pcktEmpty(curr_packet)) {
+				counter++;
+		}
+		curr_packet = curr_packet->next;
+	}
+	return counter;
+}
 int countPackets(Flow * flow) {
 	int counter = 0;
 	Packet *curr_packet = flow->head;
@@ -31,10 +46,6 @@ int countPackets(Flow * flow) {
 		curr_packet = curr_packet->next;
 	}
 	return counter;
-}
-
-void getStats(Flow * flow, stats_st *stats) {
-	stats->pcktsNum = countPackets(flow);
 }
 
 Flow *addNewFlow(Flow **head, Flow *new_flow) {
@@ -75,16 +86,34 @@ void addNewPacket(Flow *flow, Packet *pckt) {
 	}
 }
 
+void flowDelays(Flow * flow, stats_st *stats) {
+	double totalDelay = 0;
+	int tempMax = 0;
+	Packet *curr_p = flow->head;
+	int curr_d;
+	while (NULL != curr_p) {
+		//curr_d = curr_p->done_time - curr_p->arrival_time;
+		curr_d = curr_p->start_time - curr_p->arrival_time;
+		totalDelay += (double)curr_d;
+		if (curr_d > tempMax) {
+			tempMax = curr_d;
+		}
+		curr_p = curr_p->next;
+	}
+	stats->maxDelay = tempMax;
+	stats->avgDelay = totalDelay / stats->pcktsNum;
+}
+
 /* external functions */
-bool flowStepDone(Flow *flow, int type, int quant_size) {
+bool isPacketDonePerCycle(Flow *flow, int type, int quant_size) {
 	/* verify input and get the current packet in the flow */
 	assert(flow != NULL);
-	Packet *pckt = getPacket(flow);
+	Packet *pckt = flow->curr_pckt;
 	assert(pckt != NULL);
 	switch (type)
 	{
 	case RR:
-		return pcktDone(pckt, 0);
+		return pcktEmpty(pckt);
 		break;
 	case DRR:
 		return pcktDone(pckt, quant_size);
@@ -94,74 +123,45 @@ bool flowStepDone(Flow *flow, int type, int quant_size) {
 		break;
 	}
 }
-void sendByte(Flow *flow) {
-	/* verify input and get the current packet in the flow */
-	assert(flow != NULL);
-	Packet *pckt = getPacket(flow);
-	assert(pckt != NULL);
-	pcktStep(pckt, 1);
-}
 
-void writeStats(Flow * head, FILE * stats_file) {
-	Flow *curr_f = head;
-	stats_st curr_stats;
-	while (curr_f != NULL) {
-		getStats(curr_f, &curr_stats);
-		writeStatLog(stats_file, curr_f->id, curr_stats.pcktsNum, curr_stats.maxDelay, curr_stats.avgDelay, curr_stats.maxBuff, curr_stats.avgBuff);
-		curr_f = curr_f->next;
-	}
-}
-
-void flowStep(Flow *flow, int step_size, int time, FILE * log_file) {
-	/* verify input and get the current packet in the flow */
-	assert(flow != NULL);
-	Packet *pckt = getPacket(flow);
-	assert(pckt != NULL);
-
-	/* check if this is the first time proccess the current packet */
-	if (pcktStart(pckt)) {
-		/* write the time: id to log*/
-		writeLog(log_file, time, pckt->id);
+void getStats(Flow * flow, stats_st *stats, int total_time) {
+	stats->pcktsNum = countPackets(flow);
+	flowDelays(flow, stats);
+	stats->maxBuff = flow->max_buffer;
+	int pckts_waiting_time = 0;
+	Packet *tmp = flow->head;
+	while (tmp != NULL) {
+		pckts_waiting_time += tmp->start_time - tmp->arrival_time;
+		tmp = tmp->next;
 	}
 
-	/* preform one step = sends the basic quentom size of bytes per time unit from the current packet */
-	pcktStep(pckt, step_size);
-
-	/* update the number of steps already done in this flow per cycle */
-	flow->cycle_steps_done++;
-
-	/* check if the current packet was fully sent after the last step */
-	if (pcktDone(pckt)) {
-		/* procced to the next packet inside this flow */
-		nextPacket(flow);
-	}
+	stats->avgBuff = (double)pckts_waiting_time / total_time;
 }
 
-Flow *findNextNonEmptyFlow(Flow *head, Flow *flow) {
+Flow *nextNonEmptyFlow(Flow *head, Flow *flow) {
 	assert(NULL != head);
 	assert(NULL != flow);
-	Flow *start_f = flow;
-	Flow *curr_f = flow;
-
-	do {
-		curr_f = curr_f->next;
-		/* check if we went over ALL flows in list */
-		if (curr_f == start_f) {
-			/* all flows in list are empty! */
-			return NULL;
+	Flow *init_f = flow;
+	flow = (flow->next==NULL) ? head : flow->next;
+	/* cyclic search for the next flow in list that is NOT empty */
+	/* if reached same flow as starting flow, and it is not empty, return the starting flow */
+	/* if all flows in list are empty, return NULL */
+	while (flowEmpty(flow)) {
+		flow = (flow->next == NULL) ? head : flow->next;
+		if (init_f == flow) {
+			break;
 		}
-		/* if we reached the end of the list, go back to the begging */
-		if (curr_f == NULL) {
-			curr_f = head;
-		}
-	} while (flowEmpty(curr_f));
-	return curr_f;
+	}
+	if (flowEmpty(flow)) {
+		return NULL;
+	}
+	return flow;
 }
 
 bool flowEmpty(Flow *flow) {
 	assert(NULL != flow);
 	/* if the current packet of the flow is NULL - the flow is empty, no more packet to send */
-	return (NULL == getPacket(flow));
+	return (NULL == flow->curr_pckt);
 }
 
 bool flowsAreEqual(Flow *f1, Flow *f2)
@@ -175,7 +175,7 @@ void parseLine(const char *line, Flow *flow, Packet *packet)
 	packet->id = atoi(curr_line_ptr);
 
 	curr_line_ptr = getPointerAfterSpace(curr_line_ptr); //points on Time
-	packet->start_time = atoi(curr_line_ptr);
+	packet->arrival_time = atoi(curr_line_ptr);
 
 	curr_line_ptr = getPointerAfterSpace(curr_line_ptr); //points on Sadd
 	char *end_of_flow_id_ptr = curr_line_ptr;
@@ -205,19 +205,20 @@ Flow *findFlow(Flow *flow_head, Flow *new_flow)
 
 	while (true)
 	{
+		if (flowsAreEqual(flow_head, new_flow))
+			return flow_head;
 		flow_head = flow_head->next;
 		if (flow_head == NULL)
 			return NULL;
 
-		if (flowsAreEqual(flow_head, new_flow))
-			return flow_head;
+		
 	}
 }
 
-void storePacket(const char *line, Flow **flow_head)
+void storePacket(const char *line, Flow **flow_head, int step_size)
 {
 	Flow given_flow;
-	initFlow(&given_flow);
+	initFlow(&given_flow, step_size);
 
 	Packet *new_packet = (Packet *)malloc(sizeof(Packet));
 	assert(NULL != new_packet);
@@ -226,6 +227,7 @@ void storePacket(const char *line, Flow **flow_head)
 	parseLine(line, &given_flow, new_packet);
 
 	/* search the given flow in the flow list */
+
 	Flow *curr_flow = findFlow(*flow_head, &given_flow); // attention - function returns flow pointer
 	
 	/* if flow not exist, create new flow and add to end of list */
@@ -237,7 +239,14 @@ void storePacket(const char *line, Flow **flow_head)
 
 	/* add packet to flow */
 	addNewPacket(curr_flow, new_packet); //remmember to allocate memory
+
+	/* update flow stats */
+	if (curr_flow->max_buffer < countFullPackets(curr_flow)) {
+		curr_flow->max_buffer = countFullPackets(curr_flow);
+	}
 }
+
+
 
 
 

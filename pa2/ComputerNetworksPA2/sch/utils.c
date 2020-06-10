@@ -65,19 +65,6 @@ void closeFiles(Files *files)
 	fclose(files->stats_file);
 }
 
-void writeLog(FILE *fp, int time, int id) {
-	/* writes time: id to fp*/
-	char log_line[MAX_LINE_LEN];
-	char time_str[MAX_LINE_LEN];
-	char id_str[MAX_LINE_LEN];
-	sprintf(time_str, "%d", time);
-	sprintf(id_str, "%d", id);
-	strcpy(log_line, time_str);
-	strcat(log_line, ": ");
-	strcat(log_line, id_str);
-	fprintf(fp, "%s\n", log_line);
-}
-
 void writeStatLog(FILE *fp, char *flow, int numPkts, int maxDelay, double avgDelay, int maxBuff, double avgBuff) {
 	/* writes 'Sadd Sport Dadd Dport numPkts maxDelay avgDelay maxBuff avgBuff' to fp*/
 	char log_line[MAX_LINE_LEN];
@@ -117,3 +104,6 @@ char *getPointerAfterSpace(const char *str)
 	output++;
 	return output;
 }
+
+
+
